@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/x-icon" href="/ico.ico">
+    <title>The UML enhancing project</title>
+</head>
+
+<body>
+<div class="scrolling-background"></div>
+<div class="scrolling"></div>
+
+<h1 class="title">Uml enhancing</h1>
+
+<div class="input-container">
+    <form class="upload-form" method="post" enctype="multipart/form-data">
+        <div class="select-file">Choisissez un fichier PlantUML</div>
+
+        <label class="file-label">
+            <span class="file-button">Sélectionner un fichier</span>
+            <input th:type="file" class="file-input" accept=".puml">
+        </label>
+
+        <div class="file-name" id="file-name">Aucun fichier sélectionné</div>
+        <button type="submit" class="submit-button" disabled>Traiter</button>
+    </form>
+</div>
+
+<img id="uml-image" style="display:none; margin-top:25px; max-width:45%; border:3px solid black; border-radius:8px;">
+
+
+<script>
+    const button = document.querySelector('.submit-button');
+    const fileInput = document.querySelector('.file-input');
+    const fileName = document.getElementById('file-name');
+    const umlImage = document.getElementById('uml-image');
+
+    function encode64(data) {
+        const r = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_";
+        let s = "";
+        let i = 0;
+        while (i < data.length) {
+            let c1 = data.charCodeAt(i++) & 0xff;
+            if (i === data.length) {
+                s += r.charAt(c1 >> 2);
+                s += r.charAt((c1 & 0x3) << 4);
+                s += "==";
+                break;
+            }
+            let c2 = data.charCodeAt(i++);
+            if (i === data.length) {
+                s += r.charAt(c1 >> 2);
+                s += r.charAt(((c1 & 0x3) << 4) | ((c2 & 0xF0) >> 4));
+                s += r.charAt((c2 & 0xF) << 2);
+                s += "=";
+                break;
+            }
+            let c3 = data.charCodeAt(i++);
+            s += r.charAt(c1 >> 2);
+            s += r.charAt(((c1 & 0x3) << 4) | ((c2 & 0xF0) >> 4));
+            s += r.charAt(((c2 & 0xF) << 2) | ((c3 & 0xC0) >> 6));
+            s += r.charAt(c3 & 0x3F);
+        }
+        return s;
+    }
+
+    function compressAndEncode(text) {
+        const deflated = pako.deflateRaw(text, { level: 9 });
+        let binary = "";
+        deflated.forEach(byte => binary += String.fromCharCode(byte));
+        return encode64(binary);
+    }
+
+    fileInput.addEventListener('change', function () {
+
+        if (this.files.length > 0) {
+            button.disabled = false;
+
+            fileName.textContent = this.files[0].name;
+            fileName.classList.add("has-file");
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const pumlText = e.target.result;
+
+                const encoded = compressAndEncode(pumlText);
+                const imageUrl = "https://www.plantuml.com/plantuml/png/" + encoded;
+
+                umlImage.src = imageUrl;
+                umlImage.style.display = "block";
+            };
+            reader.readAsText(this.files[0]);
+
+        } else {
+            button.disabled = true;
+            fileName.textContent = "Aucun fichier sélectionné";
+            fileName.classList.remove("has-file");
+            umlImage.style.display = "none";
+        }
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+
+</body>
+
+<style>
+    body {
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        margin: 0;
+        padding: 20px;
+        opacity: 0.9;
+        font-family: monospace;
+        overflow: auto;
+        background-color: #4d38ff;
+    }
+
+    .scrolling-background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url('/bg.png');
+        background-size: 350px 300px;
+        background-repeat: repeat;
+        background-position: top left;
+        animation: moveBackground 100s linear infinite;
+        z-index: -1;
+    }
+
+    .scrolling {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #44D7FF, #0057FF);
+        z-index: -2;
+    }
+
+    @keyframes moveBackground {
+        from { background-position: 0 0; }
+        to   { background-position: -500px -500px; }
+    }
+
+    .title {
+        margin: 20px auto;
+        text-align: center;
+        padding: 15px 25px;
+        background-color: white;
+        border: solid 4px black;
+        width: 275px;
+        border-radius: 5px;
+        font-size: 32px;
+        box-shadow: 5px 5px 0 black;
+    }
+
+    .input-container {
+        border: solid 4px black;
+        background-color: white;
+        border-radius: 8px;
+        padding: 25px 15px;
+        text-align: center;
+        width: 450px;
+        margin: 50px auto 30px auto;
+        font-size: 18px;
+    }
+
+    .select-file {
+        font-size: 22px;
+        margin-bottom: 40px;
+        font-weight: bold;
+    }
+
+    .file-label {
+        display: inline-block;
+        cursor: pointer;
+    }
+
+    .file-button {
+        background-color: #ffffff;
+        border: solid 3px black;
+        padding: 12px 25px;
+        font-size: 18px;
+        border-radius: 6px;
+        box-shadow: 4px 4px 0 black;
+        transition: transform 0.1s ease;
+        display: inline-block;
+    }
+
+    .file-button:hover {
+        transform: translate(-2px, -2px);
+    }
+
+    .file-input {
+        display: none;
+    }
+
+    .file-name {
+        font-size: 16px;
+        font-style: italic;
+        color: #222;
+        width: fit-content;
+        margin: 20px auto;
+        padding: 10px;
+    }
+
+    .file-name.has-file {
+        background-color: #a1c1ff;
+        border-radius: 15px;
+        box-shadow: 3px 3px 0 #7daaff;
+        color: white;
+    }
+
+    .submit-button {
+        margin-top: 20px;
+        background-color: #000000;
+        padding: 5px 15px;
+        font-size: 18px;
+        border-radius: 6px;
+        color: white;
+        cursor: pointer;
+        transition: transform 0.1s ease;
+        font-family: monospace;
+    }
+
+    .submit-button:hover {
+        transform: translate(-2px, -2px);
+    }
+
+    .submit-button:disabled {
+        background-color: gray;
+        cursor: not-allowed;
+        transform: none;
+        color: #ccc;
+    }
+
+    .submit-button:disabled:hover {
+        transform: none;
+    }
+</style>
+
+</html>
