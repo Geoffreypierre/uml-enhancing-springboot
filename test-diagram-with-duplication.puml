@@ -1,0 +1,29 @@
+@startuml
+class Address {
+  name: String
+  age: int
+  street: String
+  city: String
+  zipCode: String
+  +getName(): String
+  +setName(name: String): void
+  +getAge(): int
+  +setAge(age: int): void
+  +getFullAddress(): String
+}
+
+class Company {
+  name: String
+  age: int
+  companyName: String
+  employees: List<Person>
+  +getName(): String
+  +setName(name: String): void
+  +getAge(): int
+  +setAge(age: int): void
+  +addEmployee(person: Person): void
+  +getEmployeeCount(): int
+}
+
+Address "*" -- "1" Company : employs
+@enduml

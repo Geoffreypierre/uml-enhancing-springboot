@@ -1,0 +1,27 @@
+@startuml
+' Concrete Classes
+class Person {
+  name: String
+  age: int
+  +getName(): String
+  +setName(name: String): void
+  +getAge(): int
+  +setAge(age: int): void
+}
+class Address {
+  street: String
+  city: String
+  zipCode: String
+  +getFullAddress(): String
+}
+class Company {
+  companyName: String
+  employees: List<Person>
+  +addEmployee(person: Person): void
+  +getEmployeeCount(): int
+}
+
+' Associations
+Person "1" -- "0..1" Address : lives_at
+Person "*" -- "1" Company : works_for
+@enduml
