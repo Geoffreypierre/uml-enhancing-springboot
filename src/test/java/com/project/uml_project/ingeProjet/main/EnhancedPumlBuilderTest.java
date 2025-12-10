@@ -77,7 +77,7 @@ class EnhancedPumlBuilderTest {
     }
 
     @Test
-    void testEnhanceFiltersConcepts() {
+    void testEnhanceFiltersConcepts() throws Exception {
         when(mockLlmProvider.request(anyString())).thenReturn("0.5");
 
         Collection<Concept> concepts = new ArrayList<>();
@@ -97,7 +97,7 @@ class EnhancedPumlBuilderTest {
     }
 
     @Test
-    void testEnhanceKeepsHighScoredConcepts() {
+    void testEnhanceKeepsHighScoredConcepts() throws Exception {
         when(mockLlmProvider.request(anyString())).thenReturn("0.8");
 
         Collection<Concept> concepts = new ArrayList<>();

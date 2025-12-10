@@ -1,0 +1,30 @@
+@startuml
+' Abstract Classes (Common Attributes/Methods)
+abstract class NamedEntity {
+  age: int
+  name: String
+  +setAge(age: int): void
+  +getName(): String
+  +setName(name: String): void
+  +getAge(): int
+}
+' Concrete Classes
+class Address {
+  street: String
+  city: String
+  zipCode: String
+  +getFullAddress(): String
+}
+class Company {
+  companyName: String
+  employees: List<Person>
+  +addEmployee(person: Person): void
+  +getEmployeeCount(): int
+}
+' Inheritance Relationships
+NamedEntity <|-- Address
+NamedEntity <|-- Company
+
+' Associations
+Address "*" -- "1" Company : employs
+@enduml

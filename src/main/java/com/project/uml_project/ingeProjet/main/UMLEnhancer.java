@@ -13,6 +13,7 @@ public class UMLEnhancer {
     private FCA4JAdapter dca4jAdapter;
     private EnhancedPumlBuilder pumlBuilder;
     private String originalUml;
+    private String result;
 
     public UMLEnhancer(Parser parser, FCA4JAdapter dca4jAdapter, EnhancedPumlBuilder pumlBuilder) {
         this.parser = parser;
@@ -24,13 +25,24 @@ public class UMLEnhancer {
     public void init(String pathToInputUml, float relevanceThreshold) throws Exception {
         // Récupère le PUML original dans le fichier
         originalUml = PlantUMLReader.lireContenuPUML(pathToInputUml);
+
+        if (originalUml == null || originalUml.isEmpty()) {
+            throw new Exception("Failed to read PUML file or file is empty: " + pathToInputUml);
+        }
+
         parser.setPuml(originalUml);
-        pumlBuilder.setLlmProvider(new LLMProvider(token, "gpt-4"));
+
+        // Use environment variable for token if not already set
+        if (token == null || token.isEmpty()) {
+            token = System.getenv("OPENAI_API_KEY");
+        }
+
+        pumlBuilder.setLlmProvider(new LLMProvider(token, "gpt-4o-mini"));
         pumlBuilder.setFilterTreeshold(relevanceThreshold);
     };
 
     // Execute le processus
-    public void exec() {
+    public void exec() throws Exception {
         // 1. Parser le diagramme UML
 
         Diagram originalDiagram = parser.parse();
@@ -46,7 +58,7 @@ public class UMLEnhancer {
         // EnhancedPumlBuilder appelle le LLM pour améliorer le diagramme
         pumlBuilder.enhance();
         // Exporte le nouveau diagramme
-        pumlBuilder.export();
+        result = pumlBuilder.export();
     };
 
     public Parser getParser() {
@@ -71,6 +83,18 @@ public class UMLEnhancer {
 
     public void setPumlBuilder(EnhancedPumlBuilder pumlBuilder) {
         this.pumlBuilder = pumlBuilder;
+    }
+
+    public String getToken() {
+        return this.token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public String getResult() {
+        return this.result;
     }
 
 };

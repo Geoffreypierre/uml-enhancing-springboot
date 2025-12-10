@@ -5,8 +5,24 @@ import com.project.uml_project.ingeProjet.LLM.LLMProvider;
 import java.util.Optional;
 
 public class Concept {
-    private static final String promptForScore = "";
-    private static final String promptForName = "";
+    private static final String PROMPT_TEMPLATE_SCORE = "Analyze this UML concept and rate its relevance for a well-designed class diagram.\n"
+            +
+            "Concept Name: %s\n" +
+            "Attributes: %s\n" +
+            "Methods: %s\n\n" +
+            "Rate the relevance on a scale from 0.0 to 1.0 where:\n" +
+            "- 1.0 = Highly relevant, well-defined, cohesive concept\n" +
+            "- 0.5 = Moderately relevant, could be improved\n" +
+            "- 0.0 = Not relevant, poorly defined\n\n" +
+            "Respond with ONLY a number between 0.0 and 1.0, nothing else.";
+
+    private static final String PROMPT_TEMPLATE_NAME = "Given this UML concept, suggest a better, more descriptive class name.\n"
+            +
+            "Original Name: %s\n" +
+            "Attributes: %s\n" +
+            "Methods: %s\n\n" +
+            "Respond with ONLY the suggested class name, nothing else. " +
+            "Use PascalCase (e.g., UserAccount, OrderManager).";
 
     private String originalName;
     private java.util.Collection<String> attribute;
@@ -26,17 +42,45 @@ public class Concept {
         this.relevanceScore = Optional.empty();
     }
 
-    public float relevanceScore() {
-        // Appeler le llm provider
+    public float relevanceScore() throws Exception {
+        // Call the LLM provider to score this concept
         if (relevanceScore.isEmpty()) {
-            String stringScore = llmProvider.request(promptForScore);
-            relevanceScore = Optional.of(Float.parseFloat(stringScore));
+            // Build prompt with concept details
+            String prompt = String.format(PROMPT_TEMPLATE_SCORE,
+                    this.originalName != null ? this.originalName : "Unknown",
+                    this.attribute != null ? this.attribute.toString() : "[]",
+                    this.method != null ? this.method.toString() : "[]");
+
+            String stringScore = llmProvider.request(prompt);
+
+            // Parse the score, handling potential formatting issues
+            stringScore = stringScore.trim().replaceAll("[^0-9.]", "");
+            float score = Float.parseFloat(stringScore);
+
+            // Clamp to valid range [0.0, 1.0]
+            score = Math.max(0.0f, Math.min(1.0f, score));
+
+            relevanceScore = Optional.of(score);
         }
         return relevanceScore.get();
     }
 
-    public String setNameFromLLM() {
-        this.name = llmProvider.request(promptForName);
+    public String setNameFromLLM() throws Exception {
+        // Build prompt with concept details
+        String prompt = String.format(PROMPT_TEMPLATE_NAME,
+                this.originalName != null ? this.originalName : "Unknown",
+                this.attribute != null ? this.attribute.toString() : "[]",
+                this.method != null ? this.method.toString() : "[]");
+
+        String suggestedName = llmProvider.request(prompt);
+
+        // Clean up the response (remove quotes, trim, take first word if multiple)
+        suggestedName = suggestedName.trim()
+                .replaceAll("^\"|\"$", "") // Remove surrounding quotes
+                .replaceAll("^'|'$", "") // Remove surrounding single quotes
+                .split("\\s+")[0]; // Take first word if multiple
+
+        this.name = suggestedName;
         return this.name;
     }
 

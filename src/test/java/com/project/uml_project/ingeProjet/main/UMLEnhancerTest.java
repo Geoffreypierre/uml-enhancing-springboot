@@ -86,9 +86,14 @@ class UMLEnhancerTest {
         String content = "@startuml\nclass TestClass\n@enduml";
         Files.writeString(testFile, content);
 
-        // Note: This will fail if LLMProvider requires valid token
-        // For now, we expect it to throw when setting up LLMProvider
-        assertThrows(Exception.class, () -> enhancer.init(testFile.toString(), 0.5f));
+        // Set a dummy token - init should not throw during setup
+        // (actual LLM calls will fail with dummy token, but init just sets up the
+        // provider)
+        enhancer.setToken("test-token-dummy");
+
+        // Init should work with any token string (validation happens on actual API
+        // calls)
+        assertDoesNotThrow(() -> enhancer.init(testFile.toString(), 0.5f));
     }
 
     @Test
@@ -98,10 +103,11 @@ class UMLEnhancerTest {
     }
 
     @Test
-    void testExecFlow() {
+    void testExecFlow() throws Exception {
         // Setup mocks
         when(mockParser.parse()).thenReturn(mockDiagram);
         when(mockDiagram.toKnowledgeGraph()).thenReturn(mockNode);
+        doNothing().when(mockPumlBuilder).enhance();
 
         Collection<Concept> concepts = new ArrayList<>();
         Concept concept = new Concept("Test", null, new ArrayList<>(), new ArrayList<>(), "TestConcept");
