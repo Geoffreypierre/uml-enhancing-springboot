@@ -1,31 +1,37 @@
 package com.project.uml_project.ingeProjet.main;
 
 import com.project.uml_project.ingeProjet.utils.Diagram;
-import com.project.uml_project.ingeProjet.LLM.LLMMProvider;
-import com.project.uml_project.ingeProjet.main.Concept;
-
-
-
-
-
+import com.project.uml_project.ingeProjet.LLM.LLMProvider;
 
 public class EnhancedPumlBuilder {
 
     private java.util.Collection<Concept> concepts;
     private Diagram originalDiagram;
     private float filterTreeshold;
-    private LLMMProvider llmProvider;
+    private LLMProvider llmProvider;
 
-    public EnhancedPumlBuilder(java.util.Collection<Concept> concepts, Diagram originalDiagram, float filterTreeshold, LLMMProvider llmProvider) 
+    public EnhancedPumlBuilder()
 	{
-		this.concepts = concepts;
-		this.originalDiagram = originalDiagram;
-		this.filterTreeshold = filterTreeshold;
-		this.llmProvider = llmProvider;
     }
 
-    public void enhance() {};
-    public void export() {};
+    // Doit améliorer l'uml original
+    public void enhance() {
+        // Appelle le LLM pour noter les concepts et les nommer
+        for (Concept concept : concepts){
+            concept.relevanceScore();
+            concept.setNameFromLLM();
+        }
+
+        // Filtre les concepts avec le treshold
+        concepts.removeIf(concept ->
+                concept.relevanceScore() < filterTreeshold);
+
+    }
+
+    // exporte le nouveau diagramme en puml
+    public void export() {
+
+    };
 
 
     public java.util.Collection<Concept> getConcepts() {
@@ -49,11 +55,11 @@ public class EnhancedPumlBuilder {
     public void setFilterTreeshold(float filterTreeshold) {
         this.filterTreeshold = filterTreeshold;
     }
-    public LLMMProvider getLlmProvider() {
+    public LLMProvider getLlmProvider() {
         return this.llmProvider;
     }
 
-    public void setLlmProvider(LLMMProvider llmProvider) {
+    public void setLlmProvider(LLMProvider llmProvider) {
         this.llmProvider = llmProvider;
     }
 

@@ -9,12 +9,12 @@ import com.openai.models.chat.completions.ChatCompletionUserMessageParam;
 
 import java.util.List;
 
-public class LLMMProvider {
+public class LLMProvider {
 
     private String model;
     private OpenAIClient client;
 
-    public LLMMProvider(String token, String model) {
+    public LLMProvider(String token, String model) {
         this.model = model;
         this.client = OpenAIOkHttpClient.builder()
                 .apiKey(token)

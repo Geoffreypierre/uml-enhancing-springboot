@@ -1,22 +1,67 @@
 package com.project.uml_project.ingeProjet.main;
 
+import com.project.uml_project.ingeProjet.LLM.LLMProvider;
+
+import java.util.Optional;
+
 public class Concept {
+    private static final String promptForScore = "";
+    private static final String promptForName = "";
 
     private String originalName;
     private java.util.Collection<String> attribute;
     private java.util.Collection<String> method;
     private String name;
+    private Optional<Float> relevanceScore;
+    private LLMProvider llmProvider;
 
-    public Concept(String originalName, java.util.Collection<String> attribute, java.util.Collection<String> method, String name) 
-	{
-		this.originalName = originalName;
-		this.attribute = attribute;
-		this.method = method;
-		this.name = name;
+    public Concept(String originalName,
+                   LLMProvider llmProvider,
+                   java.util.Collection<String> attribute, java.util.Collection<String> method, String name)
+    {
+        this.llmProvider = llmProvider;
+        this.originalName = originalName;
+        this.attribute = attribute;
+        this.method = method;
+        this.name = name;
+
     }
 
-    public float relevanceScore() {return Float.parseFloat(null);};
-    public String toPuml() {return null;};
+    public float relevanceScore() {
+        //Appeler le llm provider
+        if (relevanceScore.isEmpty()) {
+            String stringScore = llmProvider.request(promptForScore);
+            relevanceScore = Optional.of(Float.parseFloat(stringScore));
+        }
+        return relevanceScore.get();
+    }
+
+    public String setNameFromLLM() {
+        this.name = llmProvider.request(promptForName);
+        return this.name;
+    }
+
+    //Probleme avec le PUML
+    public String toPuml() {
+        StringBuilder puml = new StringBuilder();
+        puml.append("abstract class \"").append(this.name).append("\" {\n");
+
+        if (this.attribute != null) {
+            for (String attr : this.attribute) {
+                puml.append("  {field} ").append(attr).append("\n");
+            }
+        }
+
+        if (this.method != null) {
+            for (String meth : this.method) {
+                puml.append("  {method} ").append(meth).append("\n");
+            }
+        }
+
+        puml.append("}\n");
+
+        return puml.toString();
+    }
 
     public String getOriginalName() {
         return this.originalName;
@@ -47,6 +92,5 @@ public class Concept {
         this.name = name;
     }
 
-	};
-
+};
 
