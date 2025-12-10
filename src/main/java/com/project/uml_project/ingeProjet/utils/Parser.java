@@ -1,15 +1,27 @@
 package com.project.uml_project.ingeProjet.utils;
 
+import net.sourceforge.plantuml.BlockUml;
+import net.sourceforge.plantuml.ErrorUml;
+import net.sourceforge.plantuml.SourceStringReader;
+
 public class Parser {
 
-
-    public Parser() 
-	{
+    private String puml;
+    public Parser() {
     }
-    public boolean validate(){return false;}
-    public Diagram parse(String string) {
+    public void setPuml(String puml) {
+        this.puml = puml;
+    }
+    public boolean validate(){
+
+        return false;}
+    public Diagram parse() {
+        if (!this.validate()) {
+            return null;
+        }
         //Parse le PUML pour en faire un diagramme
-        return null;}
+        SourceStringReader reader = new SourceStringReader(puml);
+        return new Diagram(reader.getBlocks().getFirst().getDiagram());}
 
 	}
 

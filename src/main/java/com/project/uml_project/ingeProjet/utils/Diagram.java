@@ -11,13 +11,16 @@ import net.sourceforge.plantuml.ErrorUml;
 public class Diagram {
 
 
-    public Diagram() 
+    private net.sourceforge.plantuml.core.Diagram diagram;
+    public Diagram(net.sourceforge.plantuml.core.Diagram diagram)
 	{
-
+        this.diagram = diagram;
     }
 
 
-    public Node toKnowledgeGraph() {return null;};
+    public Node toKnowledgeGraph() {
+
+        return null;};
 
     public void toPuml() {};
 

@@ -26,6 +26,7 @@ public class UMLEnhancer {
     public void init(String pathToInputUml,float relevanceThreshold) throws Exception {
         //Récupère le PUML original dans le fichier
         originalUml = PlantUMLReader.lireContenuPUML(pathToInputUml);
+        parser.setPuml(originalUml);
         pumlBuilder.setLlmProvider(new LLMProvider(token, "gpt-4"));
         pumlBuilder.setFilterTreeshold(relevanceThreshold);
     };
@@ -33,7 +34,8 @@ public class UMLEnhancer {
     // Execute le processus
     public void exec() {
         // 1. Parser le diagramme UML
-        Diagram originalDiagram = parser.parse(originalUml);
+Ajo
+        Diagram originalDiagram = parser.parse();
         // Diagrame -> KG avec diagram.toKnowledgeGraph()
         Node knowledgeGraph = originalDiagram.toKnowledgeGraph();
         // Trannsforme le KG en CSV
