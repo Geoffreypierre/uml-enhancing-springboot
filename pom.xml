@@ -66,9 +66,24 @@
 			<version>0.4.4</version>
 		</dependency>
 		<dependency>
+			<groupId>fr.lirmm.fca4j</groupId>
+			<artifactId>fca4j-io</artifactId>
+			<version>0.4.4</version>
+		</dependency>
+		<dependency>
 			<groupId>net.sourceforge.plantuml</groupId>
 			<artifactId>plantuml</artifactId>
 			<version>1.2025.10</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-junit-jupiter</artifactId>
+			<scope>test</scope>
 		</dependency>
 
 	</dependencies>

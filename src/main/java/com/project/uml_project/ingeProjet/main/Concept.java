@@ -16,19 +16,18 @@ public class Concept {
     private LLMProvider llmProvider;
 
     public Concept(String originalName,
-                   LLMProvider llmProvider,
-                   java.util.Collection<String> attribute, java.util.Collection<String> method, String name)
-	{
+            LLMProvider llmProvider,
+            java.util.Collection<String> attribute, java.util.Collection<String> method, String name) {
         this.llmProvider = llmProvider;
-		this.originalName = originalName;
-		this.attribute = attribute;
-		this.method = method;
-		this.name = name;
-
+        this.originalName = originalName;
+        this.attribute = attribute;
+        this.method = method;
+        this.name = name;
+        this.relevanceScore = Optional.empty();
     }
 
     public float relevanceScore() {
-        //Appeler le llm provider
+        // Appeler le llm provider
         if (relevanceScore.isEmpty()) {
             String stringScore = llmProvider.request(promptForScore);
             relevanceScore = Optional.of(Float.parseFloat(stringScore));
@@ -41,7 +40,7 @@ public class Concept {
         return this.name;
     }
 
-    //Probleme avec le PUML
+    // Probleme avec le PUML
     public String toPuml() {
         StringBuilder puml = new StringBuilder();
         puml.append("abstract class \"").append(this.name).append("\" {\n");
@@ -70,6 +69,7 @@ public class Concept {
     public void setOriginalName(String originalName) {
         this.originalName = originalName;
     }
+
     public java.util.Collection<String> getAttribute() {
         return this.attribute;
     }
@@ -77,6 +77,7 @@ public class Concept {
     public void setAttribute(java.util.Collection<String> attribute) {
         this.attribute = attribute;
     }
+
     public java.util.Collection<String> getMethod() {
         return this.method;
     }
@@ -84,6 +85,7 @@ public class Concept {
     public void setMethod(java.util.Collection<String> method) {
         this.method = method;
     }
+
     public String getName() {
         return this.name;
     }
@@ -92,6 +94,4 @@ public class Concept {
         this.name = name;
     }
 
-	};
-
-
+};
