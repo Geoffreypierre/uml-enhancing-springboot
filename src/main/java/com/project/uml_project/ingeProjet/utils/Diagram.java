@@ -1,4 +1,3 @@
-
 package com.project.uml_project.ingeProjet.utils;
 
 import net.sourceforge.plantuml.classdiagram.ClassDiagram;

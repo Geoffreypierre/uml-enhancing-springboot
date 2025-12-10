@@ -13,12 +13,15 @@
 <h1 class="title">Uml enhancing</h1>
 
 <div class="input-container">
-    <form class="upload-form" method="post" enctype="multipart/form-data">
+    <form class="upload-form"
+          method="post"
+          enctype="multipart/form-data"
+          action="/api/uml/upload">
         <div class="select-file">Choisissez un fichier PlantUML</div>
 
         <label class="file-label">
             <span class="file-button">Sélectionner un fichier</span>
-            <input th:type="file" class="file-input" accept=".puml">
+            <input type="file" name="file" class="file-input" accept=".puml">
         </label>
 
         <div class="file-name" id="file-name">Aucun fichier sélectionné</div>
@@ -26,8 +29,13 @@
     </form>
 </div>
 
-<img id="uml-image" style="display:none; margin-top:25px; max-width:45%; border:3px solid black; border-radius:8px;">
+<div class="img-container">
+    <div class="img-container-title">UML en entrée</div>
+    <img id="uml-image" class="before-uml">
 
+    <div class="img-container-title">UML en sortie</div>
+    <img id="uml-image-after" class="after-uml">
+</div>
 
 <script>
     const button = document.querySelector('.submit-button');
@@ -240,6 +248,34 @@
 
     .submit-button:disabled:hover {
         transform: none;
+    }
+
+    .before-uml {
+        display:none;
+        margin-top:25px;
+        max-width:100%;
+        border:3px solid black;
+        border-radius:8px;
+    }
+
+    .img-container {
+        text-align: center;
+        width: 90%;
+        margin: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .img-container-title {
+        padding: 5px 15px;
+        background-color: white;
+        border: solid 3px black;
+        font-size: 20px;
+        border-radius: 5px;
+        margin: 20px auto;
+        font-weight: bold;
     }
 </style>
 
