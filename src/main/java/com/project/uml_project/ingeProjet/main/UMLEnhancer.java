@@ -34,7 +34,7 @@ public class UMLEnhancer {
     // Execute le processus
     public void exec() {
         // 1. Parser le diagramme UML
-Ajo
+
         Diagram originalDiagram = parser.parse();
         // Diagrame -> KG avec diagram.toKnowledgeGraph()
         Node knowledgeGraph = originalDiagram.toKnowledgeGraph();
