@@ -27,18 +27,22 @@ class ParserTest {
 
     @Test
     void testValidateReturnsFalse() {
-        // Currently validate() always returns false
-        parser.setPuml("@startuml\nclass Test\n@enduml");
+        // Test with invalid/empty PUML
+        parser.setPuml("");
+        assertFalse(parser.validate());
+
+        parser.setPuml(null);
         assertFalse(parser.validate());
     }
 
     @Test
     void testParseReturnsNullWhenValidationFails() {
-        parser.setPuml("@startuml\nclass Test\n@enduml");
+        // Empty PUML should fail validation
+        parser.setPuml("");
 
         Diagram result = parser.parse();
 
-        // Since validate() returns false, parse() should return null
+        // Since validate() returns false for empty PUML, parse() should return null
         assertNull(result);
     }
 
@@ -66,6 +70,25 @@ class ParserTest {
         parser.setPuml("@startuml\nclass Test2\n@enduml");
 
         // Should not throw exception
-        assertDoesNotThrow(() -> parser.parse());
+        assertDoesNotThrow(() -> parser.setPuml("@startuml\nclass Test3\n@enduml"));
+    }
+
+    @Test
+    void testValidateReturnsTrue() {
+        // Test with valid PUML
+        System.setProperty("java.awt.headless", "true");
+        parser.setPuml("@startuml\nclass Test\n@enduml");
+        assertTrue(parser.validate());
+    }
+
+    @Test
+    void testParseWithValidPuml() {
+        // Test that valid PUML returns a Diagram
+        System.setProperty("java.awt.headless", "true");
+        parser.setPuml("@startuml\nclass Person\n@enduml");
+
+        Diagram result = parser.parse();
+
+        assertNotNull(result);
     }
 }

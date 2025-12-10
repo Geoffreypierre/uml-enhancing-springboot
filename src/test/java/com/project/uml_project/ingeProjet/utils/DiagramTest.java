@@ -36,7 +36,12 @@ class DiagramTest {
         net.sourceforge.plantuml.core.Diagram plantUmlDiagram = block.getDiagram();
 
         Diagram diagram = new Diagram(plantUmlDiagram);
+        System.out.println("\n=== testToKnowledgeGraphWithNonClassDiagram ===");
+        System.out.println("Input: Sequence diagram (non-class)");
         Node result = diagram.toKnowledgeGraph();
+        System.out.println("Generated Node: " + result.getName());
+        System.out.println("Children: " + result.getChildren().size());
+        System.out.println("===================================================\n");
 
         assertNotNull(result);
         assertNotNull(result.getChildren());
@@ -61,7 +66,17 @@ class DiagramTest {
         net.sourceforge.plantuml.core.Diagram plantUmlDiagram = block.getDiagram();
 
         Diagram diagram = new Diagram(plantUmlDiagram);
+        System.out.println("\n=== testToKnowledgeGraphWithClassDiagram ===");
+        System.out.println("Input: Person & Company classes with relationship");
         Node result = diagram.toKnowledgeGraph();
+        System.out.println("Generated Node: " + result.getName());
+        System.out.println("Children: " + result.getChildren().size());
+        for (Node child : result.getChildren()) {
+            System.out.println("  Child: " + child.getName());
+            System.out.println("    Attributes: " + child.getAttribute());
+            System.out.println("    Methods: " + child.getMethod());
+        }
+        System.out.println("=================================================\n");
 
         assertNotNull(result);
         assertNotNull(result.getChildren());
@@ -110,7 +125,17 @@ class DiagramTest {
         net.sourceforge.plantuml.core.Diagram plantUmlDiagram = block.getDiagram();
 
         Diagram diagram = new Diagram(plantUmlDiagram);
+        System.out.println("\n=== testToKnowledgeGraphStructure ===");
+        System.out.println("Input: Animal class with age attribute and eat() method");
         Node root = diagram.toKnowledgeGraph();
+        System.out.println("Generated Node: " + root.getName());
+        System.out.println("Children: " + root.getChildren().size());
+        for (Node child : root.getChildren()) {
+            System.out.println("  Child: " + child.getName());
+            System.out.println("    Attributes: " + child.getAttribute());
+            System.out.println("    Methods: " + child.getMethod());
+        }
+        System.out.println("==========================================\n");
 
         assertNotNull(root);
         assertNotNull(root.getChildren());

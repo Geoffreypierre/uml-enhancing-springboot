@@ -40,9 +40,9 @@ class PlantUMLReaderTest {
 
     @Test
     void testLireContenuPUMLWithNonExistentFile() {
-        String result = PlantUMLReader.lireContenuPUML("/non/existent/path/file.puml");
-
-        assertNull(result);
+        assertThrows(IOException.class, () -> {
+            PlantUMLReader.lireContenuPUML("/non/existent/path/file.puml");
+        });
     }
 
     @Test

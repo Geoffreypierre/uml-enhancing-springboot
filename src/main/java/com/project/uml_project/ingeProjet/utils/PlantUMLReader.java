@@ -5,12 +5,7 @@ import java.nio.file.Paths;
 import java.io.IOException;
 
 public class PlantUMLReader {
-    public static String lireContenuPUML(String cheminFichier) {
-        try {
-            return Files.readString(Paths.get(cheminFichier));
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
+    public static String lireContenuPUML(String cheminFichier) throws IOException {
+        return Files.readString(Paths.get(cheminFichier));
     }
 }

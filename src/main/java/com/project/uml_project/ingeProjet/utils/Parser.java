@@ -16,8 +16,26 @@ public class Parser {
     }
 
     public boolean validate() {
+        if (puml == null || puml.isEmpty()) {
+            return false;
+        }
 
-        return false;
+        try {
+            SourceStringReader reader = new SourceStringReader(puml);
+            if (reader.getBlocks().isEmpty()) {
+                return false;
+            }
+
+            BlockUml block = reader.getBlocks().get(0);
+            // Check if it's an error
+            if (block.getDiagram() instanceof ErrorUml) {
+                return false;
+            }
+
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public Diagram parse() {

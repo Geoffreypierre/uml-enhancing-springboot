@@ -30,14 +30,36 @@ public class Diagram {
         // Create a map to store entity nodes for relationship processing
         Map<Entity, Node> entityNodeMap = new HashMap<>();
 
-        // Process relationships (links between entities) to extract entities
-        Collection<Link> links = classDiagram.getLinks();
+        // Get all entities from the diagram
+        Collection<Entity> allEntities = new ArrayList<>();
 
-        // Collect all unique entities from the links
-        Collection<Entity> entities = collectUniqueEntities(links);
+        // Try to get entities using getEntityFactory().leafs()
+        try {
+            var entityFactory = classDiagram.getClass().getMethod("getEntityFactory").invoke(classDiagram);
+            if (entityFactory != null) {
+                @SuppressWarnings("unchecked")
+                Collection<Entity> leafs = (Collection<Entity>) entityFactory.getClass().getMethod("leafs")
+                        .invoke(entityFactory);
+                allEntities.addAll(leafs);
+            }
+        } catch (Exception e) {
+            // If reflection fails, fall back to collecting from links only
+            System.err.println("Warning: Could not extract entities directly, using links only: " + e.getMessage());
+        }
+
+        // Also collect entities from links
+        Collection<Link> links = classDiagram.getLinks();
+        Collection<Entity> entitiesFromLinks = collectUniqueEntities(links);
+
+        // Merge both collections (avoid duplicates)
+        for (Entity entity : entitiesFromLinks) {
+            if (!allEntities.contains(entity)) {
+                allEntities.add(entity);
+            }
+        }
 
         // Process all entities (classes, interfaces, enums, etc.)
-        for (Entity entity : entities) {
+        for (Entity entity : allEntities) {
             Node entityNode = createEntityNode(entity);
             entityNodeMap.put(entity, entityNode);
             rootChildren.add(entityNode);
@@ -67,52 +89,94 @@ public class Diagram {
     }
 
     private Node createEntityNode(Entity entity) {
-        Collection<Node> entityChildren = new ArrayList<>();
+        Node entityNode = new Node(new ArrayList<>());
 
-        // Create nodes for the entity's body content (attributes and methods)
-        if (entity.getBodier() != null) {
-            addFieldNodes(entity, entityChildren);
-            addMethodNodes(entity, entityChildren);
+        // Set entity name
+        if (entity.getName() != null) {
+            entityNode.setName(entity.getName());
         }
 
-        return new Node(entityChildren);
-    }
+        // Extract attributes and methods
+        Collection<String> attributes = new ArrayList<>();
+        Collection<String> methods = new ArrayList<>();
 
-    private void addFieldNodes(Entity entity, Collection<Node> entityChildren) {
-        if (entity.getBodier().getFieldsToDisplay() != null) {
+        // Extract fields (attributes)
+        if (entity.getBodier() != null && entity.getBodier().getFieldsToDisplay() != null) {
             for (Object field : entity.getBodier().getFieldsToDisplay()) {
-                // Field information can be extracted and stored in the Node if needed
-                Node fieldNode = new Node(new ArrayList<>());
-                entityChildren.add(fieldNode);
+                if (field != null) {
+                    String fieldStr = field.toString();
+                    // Clean up the field string (remove visibility markers, etc.)
+                    attributes.add(cleanMemberString(fieldStr));
+                }
             }
         }
+
+        // Extract methods
+        if (entity.getBodier() != null && entity.getBodier().getMethodsToDisplay() != null) {
+            for (Object method : entity.getBodier().getMethodsToDisplay()) {
+                if (method != null) {
+                    String methodStr = method.toString();
+                    // Clean up the method string
+                    methods.add(cleanMemberString(methodStr));
+                }
+            }
+        }
+
+        // Set attributes and methods on the node
+        if (!attributes.isEmpty()) {
+            entityNode.setAttribute(attributes);
+        }
+        if (!methods.isEmpty()) {
+            entityNode.setMethod(methods);
+        }
+
+        return entityNode;
     }
 
-    private void addMethodNodes(Entity entity, Collection<Node> entityChildren) {
-        if (entity.getBodier().getMethodsToDisplay() != null) {
-            for (Object method : entity.getBodier().getMethodsToDisplay()) {
-                // Method information can be extracted and stored in the Node if needed
-                Node methodNode = new Node(new ArrayList<>());
-                entityChildren.add(methodNode);
-            }
-        }
+    private String cleanMemberString(String member) {
+        // Remove visibility markers like {field}, {method}, +, -, #, ~
+        String cleaned = member.replaceAll("\\{[^}]*\\}", "").trim();
+        cleaned = cleaned.replaceAll("^[+\\-#~]\\s*", "");
+        return cleaned;
     }
 
     private Node createRelationshipNode(Link link, Map<Entity, Node> entityNodeMap) {
         Entity entity1 = link.getEntity1();
         Entity entity2 = link.getEntity2();
 
-        Collection<Node> relationshipChildren = new ArrayList<>();
+        Node relationshipNode = new Node(new ArrayList<>());
 
-        // Add reference to connected entities if they exist in our map
-        if (entityNodeMap.containsKey(entity1)) {
-            relationshipChildren.add(entityNodeMap.get(entity1));
-        }
-        if (entityNodeMap.containsKey(entity2)) {
-            relationshipChildren.add(entityNodeMap.get(entity2));
+        // Set relationship name based on connected entities
+        String entity1Name = entity1.getName() != null ? entity1.getName() : "Unknown";
+        String entity2Name = entity2.getName() != null ? entity2.getName() : "Unknown";
+        String linkLabel = link.getLabel() != null ? link.getLabel().toString() : "";
+
+        // Create a descriptive relationship name
+        StringBuilder relationshipName = new StringBuilder();
+        relationshipName.append(entity1Name);
+        relationshipName.append("_to_");
+        relationshipName.append(entity2Name);
+        if (!linkLabel.isEmpty()) {
+            relationshipName.append("_").append(linkLabel.replaceAll("\\s+", "_"));
         }
 
-        return new Node(relationshipChildren);
+        relationshipNode.setName(relationshipName.toString());
+
+        // Add relationship metadata as attributes
+        Collection<String> relationshipAttrs = new ArrayList<>();
+        relationshipAttrs.add("type: " + link.getType().toString());
+        if (!linkLabel.isEmpty()) {
+            relationshipAttrs.add("label: " + linkLabel);
+        }
+        if (link.getQuantifier1() != null && !link.getQuantifier1().isEmpty()) {
+            relationshipAttrs.add("cardinality1: " + link.getQuantifier1());
+        }
+        if (link.getQuantifier2() != null && !link.getQuantifier2().isEmpty()) {
+            relationshipAttrs.add("cardinality2: " + link.getQuantifier2());
+        }
+        relationshipNode.setAttribute(relationshipAttrs);
+
+        return relationshipNode;
     }
 
     public void toPuml() {
