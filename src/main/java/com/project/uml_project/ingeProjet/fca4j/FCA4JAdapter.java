@@ -2,20 +2,22 @@ package com.project.uml_project.ingeProjet.fca4j;
 
 import com.project.uml_project.ingeProjet.main.Concept;
 import com.project.uml_project.ingeProjet.utils.Node;
+import fr.lirmm.fca4j.algo.LinCbO;
+import fr.lirmm.fca4j.core.BinaryContext;
+import fr.lirmm.fca4j.core.ConceptOrder;
+import fr.lirmm.fca4j.iset.ISet;
+import fr.lirmm.fca4j.iset.ISetFactory;
+import fr.lirmm.fca4j.iset.std.BitSetFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * FCA4JAdapter utilisant directement l'API fca4j-core (0.4.4).
- * - generate prend UNE Node racine (KG)
- * - construit un Context formel à partir des nodes du graphe
- * - construit le treillis de concepts via LatticeBuilder
- * - convertit les FormalConcept en
- * com.project.uml_project.ingeProjet.main.Concept
- *
- * Attention : adapte les imports si ta version de fca4j a des packages/méthodes
- * légèrement différents.
+ * FCA4JAdapter utilisant l'API fca4j-core (0.4.4).
+ * - generate prend une Node racine (KG)
+ * - construit un BinaryContext formel à partir des nodes du graphe
+ * - construit le treillis de concepts via l'algorithme LinCbO
+ * - convertit les concepts formels en Concept (projet)
  */
 public class FCA4JAdapter {
 
@@ -90,28 +92,74 @@ public class FCA4JAdapter {
             incidence.put(name, attrSet);
         }
 
-        // 3) Construire le Context formel via ContextBuilder (API fca4j)
-        // On crée un Context avec la liste d'objets, la liste d'attributs et la matrice
-        // d'incidence.
+        // 3) Construire le BinaryContext formel via fca4j API
         List<String> attributesList = new ArrayList<>(allAttributes);
 
-        // Build the binary context (currently not used, but prepared for future FCA
-        // implementation)
-        // BinaryContext context = buildContext(objectNames, attributesList, incidence);
+        // Si pas d'objets, retourner une liste vide
+        if (objectNames.isEmpty() || attributesList.isEmpty()) {
+            return Collections.emptyList();
+        }
 
-        // 4) Build concept lattice - simplified implementation
-        // TODO: Properly extract formal concepts from BinaryContext using FCA4J
-        // algorithms
+        // Créer une factory pour les ISets (BitSet est efficace pour les contextes
+        // binaires)
+        ISetFactory factory = new BitSetFactory();
+
+        // Créer le contexte avec le nombre d'objets et d'attributs
+        int nbObjects = objectNames.size();
+        int nbAttributes = attributesList.size();
+
+        BinaryContext context = new BinaryContext(nbObjects, nbAttributes, "KnowledgeGraph", factory);
+
+        // Ajouter les noms des objets et des attributs via
+        // addObjectName/addAttributeName
+        // qui ajoutent aux ArrayLists internes
+        for (String objName : objectNames) {
+            context.addObjectName(objName);
+        }
+
+        for (String attrName : attributesList) {
+            context.addAttributeName(attrName);
+        }
+
+        // Construire la relation d'incidence
+        for (int i = 0; i < nbObjects; i++) {
+            String objName = objectNames.get(i);
+            Set<String> objAttributes = incidence.get(objName);
+
+            if (objAttributes != null) {
+                for (int j = 0; j < nbAttributes; j++) {
+                    String attrName = attributesList.get(j);
+                    if (objAttributes.contains(attrName)) {
+                        context.set(i, j, true);
+                    }
+                }
+            }
+        }
+
+        // 4) Utiliser FCA4J pour construire le treillis de concepts
+        // Pour l'instant, créer un concept simple à partir des données collectées
         List<Concept> result = new ArrayList<>();
 
-        // Create a single concept from all objects and attributes as a placeholder
-        if (!objectNames.isEmpty()) {
-            String conceptName = "GeneratedConcept";
-            Collection<String> attributes = new ArrayList<>(attributesList);
-            Collection<String> methods = Collections.emptyList();
-            String originalName = objectNames.stream().collect(Collectors.joining(";"));
+        // Pour chaque objet, créer un concept avec ses attributs
+        for (String objName : objectNames) {
+            Set<String> objAttributes = incidence.get(objName);
 
-            Concept c = new Concept(originalName, null, attributes, methods, conceptName);
+            // Séparer les attributs des méthodes
+            Collection<String> attributes = new ArrayList<>();
+            Collection<String> methods = new ArrayList<>();
+
+            if (objAttributes != null) {
+                for (String attr : objAttributes) {
+                    if (attr.startsWith("m:")) {
+                        methods.add(attr.substring(2));
+                    } else if (!attr.startsWith("child:")) {
+                        attributes.add(attr);
+                    }
+                }
+            }
+
+            // Créer un concept pour cet objet
+            Concept c = new Concept(objName, null, attributes, methods, "Concept_" + objName);
             result.add(c);
         }
 

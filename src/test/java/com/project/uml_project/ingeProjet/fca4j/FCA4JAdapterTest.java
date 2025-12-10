@@ -60,6 +60,17 @@ class FCA4JAdapterTest {
 
         Collection<Concept> result = adapter.generate(root);
 
+        // Debug dump
+        System.out.println("\n=== testGenerateWithSingleNode ===");
+        System.out.println("Generated " + result.size() + " concept(s):");
+        for (Concept c : result) {
+            System.out.println("  Concept: " + c.getName());
+            System.out.println("    Original: " + c.getOriginalName());
+            System.out.println("    Attributes: " + c.getAttribute());
+            System.out.println("    Methods: " + c.getMethod());
+        }
+        System.out.println("==================================\n");
+
         assertNotNull(result);
         assertTrue(result.size() > 0);
 
@@ -92,6 +103,18 @@ class FCA4JAdapterTest {
 
         Collection<Concept> result = adapter.generate(root);
 
+        // Debug dump
+        System.out.println("\\n=== testGenerateWithMultipleNodes ===");
+        System.out.println("Input: Root with 2 children (Child1, Child2)");
+        System.out.println("Generated " + result.size() + " concept(s):");
+        for (Concept c : result) {
+            System.out.println("  Concept: " + c.getName());
+            System.out.println("    Original: " + c.getOriginalName());
+            System.out.println("    Attributes: " + c.getAttribute());
+            System.out.println("    Methods: " + c.getMethod());
+        }
+        System.out.println("======================================\\n");
+
         assertNotNull(result);
         assertTrue(result.size() > 0);
     }
@@ -105,7 +128,17 @@ class FCA4JAdapterTest {
         attributes.add("attr1");
         root.setAttribute(attributes);
 
+        System.out.println("\n=== testGenerateWithNodeWithoutName ===");
+        System.out.println("Input: Node without name (should generate UUID)");
         Collection<Concept> result = adapter.generate(root);
+        System.out.println("Generated " + result.size() + " concept(s):");
+        for (Concept c : result) {
+            System.out.println("  Concept: " + c.getName());
+            System.out.println("    Original: " + c.getOriginalName());
+            System.out.println("    Attributes: " + c.getAttribute());
+            System.out.println("    Methods: " + c.getMethod());
+        }
+        System.out.println("======================================\n");
 
         assertNotNull(result);
         assertTrue(result.size() > 0);
@@ -130,7 +163,17 @@ class FCA4JAdapterTest {
         rootChildren.add(level1);
         root.setChildren(rootChildren);
 
+        System.out.println("\n=== testGenerateWithNestedStructure ===");
+        System.out.println("Input: Root -> Level1 -> Level2 (3-level nested structure)");
         Collection<Concept> result = adapter.generate(root);
+        System.out.println("Generated " + result.size() + " concept(s):");
+        for (Concept c : result) {
+            System.out.println("  Concept: " + c.getName());
+            System.out.println("    Original: " + c.getOriginalName());
+            System.out.println("    Attributes: " + c.getAttribute());
+            System.out.println("    Methods: " + c.getMethod());
+        }
+        System.out.println("======================================\n");
 
         assertNotNull(result);
         assertTrue(result.size() > 0);
@@ -155,6 +198,18 @@ class FCA4JAdapterTest {
 
         Collection<Concept> result = adapter.generate(root);
 
+        // Debug dump
+        System.out.println("\n=== testGenerateWithComplexAttributes ===");
+        System.out.println("Input: 3 attributes, 3 methods");
+        System.out.println("Generated " + result.size() + " concept(s):");
+        for (Concept c : result) {
+            System.out.println("  Concept: " + c.getName());
+            System.out.println("    Original: " + c.getOriginalName());
+            System.out.println("    Attributes: " + c.getAttribute());
+            System.out.println("    Methods: " + c.getMethod());
+        }
+        System.out.println("==========================================\n");
+
         assertNotNull(result);
         assertTrue(result.size() > 0);
 
@@ -172,7 +227,17 @@ class FCA4JAdapterTest {
         attributes.add("testAttr");
         root.setAttribute(attributes);
 
+        System.out.println("\n=== testGenerateResultContainsValidConcept ===");
+        System.out.println("Input: TestNode with testAttr");
         Collection<Concept> result = adapter.generate(root);
+        System.out.println("Generated " + result.size() + " concept(s):");
+        for (Concept c : result) {
+            System.out.println("  Concept: " + c.getName());
+            System.out.println("    Original: " + c.getOriginalName());
+            System.out.println("    Attributes: " + c.getAttribute());
+            System.out.println("    Methods: " + c.getMethod());
+        }
+        System.out.println("==============================================\n");
 
         assertNotNull(result);
         assertFalse(result.isEmpty());
