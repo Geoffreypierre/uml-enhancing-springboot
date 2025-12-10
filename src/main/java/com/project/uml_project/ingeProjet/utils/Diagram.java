@@ -8,7 +8,7 @@ import com.project.uml_project.ingeProjet.utils.Node;
 
 
 
-
+//Représente l'uml diagramme
 public class Diagram {
 
 
@@ -16,7 +16,9 @@ public class Diagram {
 	{
     }
 
+
     public Node toKnowledgeGraph() {return null;};
+
     public void toPuml() {};
 
 

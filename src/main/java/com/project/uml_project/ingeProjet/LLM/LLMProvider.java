@@ -1,19 +1,19 @@
-
 package com.project.uml_project.ingeProjet.LLM;
 
-public class LLMMProvider {
+public class LLMProvider {
 
     private String token;
     private String model;
 
-    public LLMMProvider(String token, String model) 
+    public LLMProvider(String token, String model)
 	{
 		this.token = token;
 		this.model = model;
     }
 
-    public String request() {return null;};
-
+    public String request(String prompt) {
+        //Appeller le LLM avec le prompt et retourner la réponse
+        return null;}
 
     public String getToken() {
         return this.token;
@@ -30,6 +30,6 @@ public class LLMMProvider {
         this.model = model;
     }
 
-	};
+	}
 
 
