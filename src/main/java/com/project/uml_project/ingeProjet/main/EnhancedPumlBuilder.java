@@ -19,11 +19,21 @@ public class EnhancedPumlBuilder {
     // Doit améliorer l'uml original
     public void enhance() {
         // Appelle le LLM pour noter les concepts et les nommer
+        for (Concept concept : concepts){
+            concept.relevanceScore();
+            concept.setNameFromLLM();
+        }
+
         // Filtre les concepts avec le treshold
+        concepts.removeIf(concept ->
+                concept.relevanceScore() < filterTreeshold);
+
     };
 
     // exporte le nouveau diagramme en puml
-    public void export() {};
+    public void export() {
+
+    };
 
 
     public java.util.Collection<Concept> getConcepts() {

@@ -5,7 +5,9 @@ import com.project.uml_project.ingeProjet.LLM.LLMProvider;
 import java.util.Optional;
 
 public class Concept {
-    private static final String requeteString = "";
+    private static final String promptForScore = "";
+    private static final String promptForName = "";
+
     private String originalName;
     private java.util.Collection<String> attribute;
     private java.util.Collection<String> method;
@@ -28,12 +30,38 @@ public class Concept {
     public float relevanceScore() {
         //Appeler le llm provider
         if (relevanceScore.isEmpty()) {
-            String stringScore = llmProvider.request(requeteString);
+            String stringScore = llmProvider.request(promptForScore);
             relevanceScore = Optional.of(Float.parseFloat(stringScore));
         }
         return relevanceScore.get();
     }
-    public String toPuml() {return null;};
+
+    public String setNameFromLLM() {
+        this.name = llmProvider.request(promptForName);
+        return this.name;
+    }
+
+    //Probleme avec le PUML
+    public String toPuml() {
+        StringBuilder puml = new StringBuilder();
+        puml.append("abstract class \"").append(this.name).append("\" {\n");
+
+        if (this.attribute != null) {
+            for (String attr : this.attribute) {
+                puml.append("  {field} ").append(attr).append("\n");
+            }
+        }
+
+        if (this.method != null) {
+            for (String meth : this.method) {
+                puml.append("  {method} ").append(meth).append("\n");
+            }
+        }
+
+        puml.append("}\n");
+
+        return puml.toString();
+    }
 
     public String getOriginalName() {
         return this.originalName;
