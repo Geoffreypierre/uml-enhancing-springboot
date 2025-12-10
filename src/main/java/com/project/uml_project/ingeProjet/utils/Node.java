@@ -8,12 +8,16 @@ public class Node {
 
     private Collection<Node> children;
 
+
     public Node(Collection<Node> children)
 	{
 		this.children = children;
     }
 
-    public void toCSV() {};
+
+    public void toCSV() {
+
+    };
 
 
     public Collection<Node> getChildren() {
