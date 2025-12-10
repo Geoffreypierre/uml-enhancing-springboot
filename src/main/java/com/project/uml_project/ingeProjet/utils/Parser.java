@@ -23,6 +23,5 @@ public class Parser {
         SourceStringReader reader = new SourceStringReader(puml);
         return new Diagram(reader.getBlocks().getFirst().getDiagram());}
 
-	}
-
+}
 

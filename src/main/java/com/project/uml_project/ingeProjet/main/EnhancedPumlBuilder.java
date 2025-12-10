@@ -10,8 +10,6 @@ public class EnhancedPumlBuilder {
     private float filterTreeshold;
     private LLMProvider llmProvider;
 
-
-
     public EnhancedPumlBuilder()
 	{
     }
@@ -28,7 +26,7 @@ public class EnhancedPumlBuilder {
         concepts.removeIf(concept ->
                 concept.relevanceScore() < filterTreeshold);
 
-    };
+    }
 
     // exporte le nouveau diagramme en puml
     public void export() {

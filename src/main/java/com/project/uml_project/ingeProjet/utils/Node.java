@@ -10,8 +10,8 @@ public class Node {
 
 
     public Node(Collection<Node> children)
-	{
-		this.children = children;
+    {
+        this.children = children;
     }
 
 
@@ -28,6 +28,5 @@ public class Node {
         this.children = children;
     }
 
-	};
-
+};
 

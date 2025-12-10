@@ -13,7 +13,7 @@ public class Diagram {
 
     private net.sourceforge.plantuml.core.Diagram diagram;
     public Diagram(net.sourceforge.plantuml.core.Diagram diagram)
-	{
+    {
         this.diagram = diagram;
     }
 
@@ -24,8 +24,5 @@ public class Diagram {
 
     public void toPuml() {};
 
-
-
-	};
-
+};
 

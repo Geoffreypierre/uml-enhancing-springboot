@@ -18,12 +18,12 @@ public class Concept {
     public Concept(String originalName,
                    LLMProvider llmProvider,
                    java.util.Collection<String> attribute, java.util.Collection<String> method, String name)
-	{
+    {
         this.llmProvider = llmProvider;
-		this.originalName = originalName;
-		this.attribute = attribute;
-		this.method = method;
-		this.name = name;
+        this.originalName = originalName;
+        this.attribute = attribute;
+        this.method = method;
+        this.name = name;
 
     }
 
@@ -92,6 +92,5 @@ public class Concept {
         this.name = name;
     }
 
-	};
-
+};
 
