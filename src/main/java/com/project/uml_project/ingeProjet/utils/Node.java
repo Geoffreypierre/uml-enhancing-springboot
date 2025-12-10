@@ -2,6 +2,8 @@ package com.project.uml_project.ingeProjet.utils;
 
 import java.util.Collection;
 
+
+//représente un noeud du graphe de connaissance
 public class Node {
 
     private Collection<Node> children;
