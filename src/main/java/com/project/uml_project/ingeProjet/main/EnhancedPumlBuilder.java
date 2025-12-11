@@ -1,7 +1,7 @@
 package com.project.uml_project.ingeProjet.main;
 
-import com.project.uml_project.ingeProjet.utils.Diagram;
 import com.project.uml_project.ingeProjet.LLM.LLMProvider;
+import com.project.uml_project.ingeProjet.utils.Diagram;
 
 public class EnhancedPumlBuilder {
 
@@ -16,13 +16,26 @@ public class EnhancedPumlBuilder {
 
     // Doit améliorer l'uml original
     public void enhance() throws Exception {
+        System.out.println("EnhancedPumlBuilder: Starting enhancement with " + 
+                         (concepts != null ? concepts.size() : 0) + " concepts");
+        
+        // Set the LLM provider on each concept first
+        if (concepts != null) {
+            for (Concept concept : concepts) {
+                concept.setLlmProvider(llmProvider);
+            }
+        }
+        
         // Appelle le LLM pour noter les concepts et les nommer
         for (Concept concept : concepts) {
-            concept.relevanceScore();
-            concept.setNameFromLLM();
+            float score = concept.relevanceScore();
+            String newName = concept.setNameFromLLM();
+            System.out.println("  Concept '" + concept.getOriginalName() + 
+                             "' -> '" + newName + "' (score: " + score + ")");
         }
 
         // Filtre les concepts avec le treshold
+        int beforeFilter = concepts.size();
         concepts.removeIf(concept -> {
             try {
                 return concept.relevanceScore() < filterTreeshold;
@@ -31,6 +44,9 @@ public class EnhancedPumlBuilder {
                 return true;
             }
         });
+        
+        System.out.println("EnhancedPumlBuilder: Filtered from " + beforeFilter + 
+                         " to " + concepts.size() + " concepts (threshold: " + filterTreeshold + ")");
 
     };
 
@@ -45,7 +61,6 @@ public class EnhancedPumlBuilder {
 
             // Export abstract parent classes
             if (!enhancement.abstractClasses.isEmpty()) {
-                result.append("' Abstract Classes (Common Attributes/Methods)\n");
                 for (var abstractClass : enhancement.abstractClasses) {
                     result.append(abstractClass);
                     result.append("\n");
@@ -54,7 +69,6 @@ public class EnhancedPumlBuilder {
 
             // Export refactored concrete classes with inheritance
             if (!enhancement.concreteClasses.isEmpty()) {
-                result.append("' Concrete Classes\n");
                 for (var concreteClass : enhancement.concreteClasses) {
                     result.append(concreteClass);
                     result.append("\n");
@@ -63,7 +77,6 @@ public class EnhancedPumlBuilder {
 
             // Export inheritance relationships
             if (!enhancement.inheritanceRelations.isEmpty()) {
-                result.append("' Inheritance Relationships\n");
                 for (var relation : enhancement.inheritanceRelations) {
                     result.append(relation);
                     result.append("\n");
@@ -72,7 +85,7 @@ public class EnhancedPumlBuilder {
 
             // Export other relationships (associations)
             if (!enhancement.otherRelations.isEmpty()) {
-                result.append("\n' Associations\n");
+                result.append("\n");
                 for (var relation : enhancement.otherRelations) {
                     result.append(relation);
                     result.append("\n");

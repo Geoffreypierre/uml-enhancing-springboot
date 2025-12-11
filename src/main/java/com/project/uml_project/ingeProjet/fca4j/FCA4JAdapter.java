@@ -1,16 +1,24 @@
 package com.project.uml_project.ingeProjet.fca4j;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.UUID;
+
 import com.project.uml_project.ingeProjet.main.Concept;
 import com.project.uml_project.ingeProjet.utils.Node;
-import fr.lirmm.fca4j.algo.LinCbO;
+
 import fr.lirmm.fca4j.core.BinaryContext;
-import fr.lirmm.fca4j.core.ConceptOrder;
-import fr.lirmm.fca4j.iset.ISet;
 import fr.lirmm.fca4j.iset.ISetFactory;
 import fr.lirmm.fca4j.iset.std.BitSetFactory;
-
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * FCA4JAdapter utilisant l'API fca4j-core (0.4.4).
@@ -161,6 +169,13 @@ public class FCA4JAdapter {
             // Créer un concept pour cet objet
             Concept c = new Concept(objName, null, attributes, methods, "Concept_" + objName);
             result.add(c);
+        }
+
+        System.out.println("FCA4JAdapter generated " + result.size() + " concepts");
+        for (Concept c : result) {
+            System.out.println("  - Concept: " + c.getOriginalName() + 
+                             " (attrs: " + c.getAttribute().size() + 
+                             ", methods: " + c.getMethod().size() + ")");
         }
 
         return result;

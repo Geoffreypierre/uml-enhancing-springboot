@@ -114,9 +114,36 @@
             });
 
             const enhancedPuml = await response.text();
+            console.log("Enhanced PlantUML received:", enhancedPuml);
 
-            const encoded = compressAndEncode(enhancedPuml);
-            const imageUrl = "https://www.plantuml.com/plantuml/png/" + encoded;
+            if (!enhancedPuml || enhancedPuml.trim() === "") {
+                throw new Error("Empty response received from server");
+            }
+
+            // Render the enhanced PlantUML using the local endpoint
+            const renderFormData = new FormData();
+            renderFormData.append("puml", enhancedPuml);
+
+            const renderResponse = await fetch("/api/uml/render", {
+                method: "POST",
+                body: renderFormData
+            });
+
+            if (!renderResponse.ok) {
+                throw new Error("Failed to render PlantUML diagram");
+            }
+
+            const imageBlob = await renderResponse.blob();
+            const imageUrl = URL.createObjectURL(imageBlob);
+
+            umlImageAfter.onload = function() {
+                console.log("Image loaded successfully");
+            };
+
+            umlImageAfter.onerror = function() {
+                console.error("Failed to load rendered image");
+                alert("Erreur: Impossible de charger l'image rendue.");
+            };
 
             umlImageAfter.src = imageUrl;
             umlImageAfter.style.display = "block";

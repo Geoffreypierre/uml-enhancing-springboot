@@ -5,7 +5,6 @@ import com.project.uml_project.ingeProjet.fca4j.FCA4JAdapter;
 import com.project.uml_project.ingeProjet.utils.Diagram;
 import com.project.uml_project.ingeProjet.utils.Node;
 import com.project.uml_project.ingeProjet.utils.Parser;
-import com.project.uml_project.ingeProjet.utils.PlantUMLReader;
 
 public class UMLEnhancer {
     private String token;
@@ -22,12 +21,12 @@ public class UMLEnhancer {
     }
 
     // Charge les filtres, fichiers
-    public void init(String pathToInputUml, float relevanceThreshold) throws Exception {
-        // Récupère le PUML original dans le fichier
-        originalUml = PlantUMLReader.lireContenuPUML(pathToInputUml);
+    public void init(String pumlContent, float relevanceThreshold) throws Exception {
+        // Utilise directement le contenu PUML fourni
+        originalUml = pumlContent;
 
         if (originalUml == null || originalUml.isEmpty()) {
-            throw new Exception("Failed to read PUML file or file is empty: " + pathToInputUml);
+            throw new Exception("PUML content is null or empty");
         }
 
         parser.setPuml(originalUml);
@@ -35,6 +34,11 @@ public class UMLEnhancer {
         // Use environment variable for token if not already set
         if (token == null || token.isEmpty()) {
             token = System.getenv("OPENAI_API_KEY");
+        }
+
+        // Validate token is available
+        if (token == null || token.isEmpty()) {
+            throw new Exception("OpenAI API key not found. Please set the OPENAI_API_KEY environment variable or provide a token via setToken().");
         }
 
         pumlBuilder.setLlmProvider(new LLMProvider(token, "gpt-4o-mini"));
