@@ -124,6 +124,7 @@ class EnhancedPumlBuilderTest {
     void testEnhanceWithNullConcepts() {
         builder.setConcepts(null);
 
-        assertThrows(NullPointerException.class, () -> builder.enhance());
+        // Should not throw an exception, but handle gracefully
+        assertDoesNotThrow(() -> builder.enhance());
     }
 }

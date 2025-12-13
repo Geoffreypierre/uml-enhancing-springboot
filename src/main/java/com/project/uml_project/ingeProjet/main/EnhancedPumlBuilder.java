@@ -16,39 +16,58 @@ public class EnhancedPumlBuilder {
 
     // Doit améliorer l'uml original
     public void enhance() throws Exception {
-        System.out.println("EnhancedPumlBuilder: Starting enhancement with " + 
-                         (concepts != null ? concepts.size() : 0) + " concepts");
-        
+        // Guard: check if concepts is null or empty
+        if (concepts == null || concepts.isEmpty()) {
+            System.out.println("EnhancedPumlBuilder: No concepts to enhance");
+            return;
+        }
+
+        System.out.println("EnhancedPumlBuilder: Starting enhancement with " + concepts.size() + " concepts");
+
         // Set the LLM provider on each concept first
-        if (concepts != null) {
-            for (Concept concept : concepts) {
-                concept.setLlmProvider(llmProvider);
-            }
+        for (Concept concept : concepts) {
+            concept.setLlmProvider(llmProvider);
         }
         
         // Appelle le LLM pour noter les concepts et les nommer
         for (Concept concept : concepts) {
-            float score = concept.relevanceScore();
-            String newName = concept.setNameFromLLM();
-            System.out.println("  Concept '" + concept.getOriginalName() + 
-                             "' -> '" + newName + "' (score: " + score + ")");
+            try {
+                float score = concept.relevanceScore();
+                String newName = concept.setNameFromLLM();
+                System.out.println("  Concept '" + concept.getOriginalName() +
+                                 "' -> '" + newName + "' (score: " + score + ")");
+            } catch (Exception e) {
+                System.err.println("  Warning: Could not score concept '" + concept.getOriginalName() + "': " + e.getMessage());
+            }
         }
 
         // Filtre les concepts avec le treshold
         int beforeFilter = concepts.size();
         concepts.removeIf(concept -> {
             try {
-                return concept.relevanceScore() < filterTreeshold;
+                float score = concept.relevanceScore();
+                String name = concept.getOriginalName();
+
+                // For relationship concepts (containing "_to_"), apply a stricter threshold
+                // since they are often less significant than entity concepts
+                if (name != null && name.contains("_to_")) {
+                    // Relationships need higher relevance score (e.g., 1.5x the threshold)
+                    float relationshipThreshold = Math.min(1.0f, filterTreeshold * 1.5f);
+                    return score < relationshipThreshold;
+                }
+
+                // For entity concepts, use the normal threshold
+                return score < filterTreeshold;
             } catch (Exception e) {
                 // If we can't get the relevance score, filter out the concept
+                System.err.println("  Warning: Filtering out concept due to scoring error");
                 return true;
             }
         });
         
         System.out.println("EnhancedPumlBuilder: Filtered from " + beforeFilter + 
                          " to " + concepts.size() + " concepts (threshold: " + filterTreeshold + ")");
-
-    };
+    }
 
     // exporte le nouveau diagramme en puml
     public String export() {
@@ -150,6 +169,9 @@ public class EnhancedPumlBuilder {
             }
         }
 
+        // Track child class names for filtering sibling associations
+        java.util.Set<String> childClassNames = new java.util.HashSet<>();
+
         // Create abstract parent class if there are common members
         if (!commonAttributes.isEmpty() || !commonMethods.isEmpty()) {
             // Generate a meaningful name for the abstract class using LLM
@@ -221,7 +243,7 @@ public class EnhancedPumlBuilder {
                 // Parse relationship name: Entity1_to_Entity2_[label]
                 String[] parts = name.split("_to_");
                 if (parts.length >= 2) {
-                    String entity1 = parts[0];
+                    String entity1 = parts[0].replaceAll("_NULL$", ""); // Remove _NULL suffix
                     String rest = parts[1];
 
                     // Extract entity2 and label
@@ -229,27 +251,51 @@ public class EnhancedPumlBuilder {
                     String label = "";
                     int bracketIndex = rest.indexOf("_[");
                     if (bracketIndex > 0) {
-                        entity2 = rest.substring(0, bracketIndex);
+                        entity2 = rest.substring(0, bracketIndex).replaceAll("_NULL$", ""); // Remove _NULL suffix
                         label = rest.substring(bracketIndex + 2, rest.length() - 1);
                     } else {
-                        entity2 = rest;
+                        entity2 = rest.replaceAll("_NULL$", ""); // Remove _NULL suffix
                     }
 
-                    // Extract cardinalities from attributes
-                    String card1 = "";
-                    String card2 = "";
-                    for (String attr : relationship.getAttribute()) {
-                        if (attr.startsWith("cardinality1:")) {
-                            card1 = attr.substring(13).trim();
-                        } else if (attr.startsWith("cardinality2:")) {
-                            card2 = attr.substring(13).trim();
+                    // Check if both entities exist in the entity concepts
+                    boolean entity1Exists = entityConcepts.stream()
+                            .anyMatch(e -> e.getOriginalName().equals(entity1));
+                    boolean entity2Exists = entityConcepts.stream()
+                            .anyMatch(e -> e.getOriginalName().equals(entity2));
+
+                    // CRITICAL: Skip relationships between sibling classes (both are children of the same abstract class)
+                    boolean bothAreSiblings = childClassNames.contains(entity1) &&
+                                              childClassNames.contains(entity2);
+
+                    // Only create association if both entities exist AND they are not siblings
+                    if (entity1Exists && entity2Exists && !bothAreSiblings) {
+                        // Extract cardinalities from attributes
+                        String card1 = "1"; // Default cardinality (changed from "*")
+                        String card2 = "1"; // Default cardinality (changed from "*")
+                        for (String attr : relationship.getAttribute()) {
+                            if (attr.startsWith("cardinality1:")) {
+                                String extractedCard = attr.substring(13).trim();
+                                if (!extractedCard.isEmpty() && !extractedCard.equals("null")) {
+                                    card1 = extractedCard;
+                                }
+                            } else if (attr.startsWith("cardinality2:")) {
+                                String extractedCard = attr.substring(13).trim();
+                                if (!extractedCard.isEmpty() && !extractedCard.equals("null")) {
+                                    card2 = extractedCard;
+                                }
+                            }
                         }
-                    }
 
-                    // Create association
-                    String association = entity1 + " \"" + card1 + "\" -- \"" + card2 + "\" " +
-                            entity2 + " : " + label;
-                    enhancement.otherRelations.add(association);
+                        // Generate a default label if empty
+                        if (label == null || label.trim().isEmpty()) {
+                            label = "associated";
+                        }
+
+                        // Create association with proper formatting
+                        String association = entity1 + " \"" + card1 + "\" -- \"" + card2 + "\" " +
+                                entity2 + " : " + label;
+                        enhancement.otherRelations.add(association);
+                    }
                 }
             }
         }
@@ -264,20 +310,21 @@ public class EnhancedPumlBuilder {
             java.util.Set<String> commonMethods) {
         // If no LLM provider, use default name
         if (llmProvider == null) {
-            return "AbstractEntity";
+            return "Entity";
         }
 
         try {
-            String prompt = "Given these common attributes and methods that will be extracted into an abstract parent class, suggest a meaningful and descriptive class name.\n\n"
-                    +
-                    "Common Attributes: " + commonAttributes.toString() + "\n" +
-                    "Common Methods: " + commonMethods.toString() + "\n\n" +
-                    "Suggest a class name that describes what these common members represent. " +
-                    "The name should be:\n" +
-                    "- In PascalCase\n" +
-                    "- Descriptive and meaningful\n" +
-                    "- Typically abstract/base class naming (e.g., BaseEntity, Person, IdentifiableObject)\n\n" +
-                    "Respond with ONLY the class name, nothing else.";
+            // Build a prompt that emphasizes generic naming, not specific domains
+            String prompt = "You are naming an abstract parent class that will be inherited by multiple concrete classes.\n\n" +
+                    "Common Attributes (inherited by all children): " + commonAttributes.toString() + "\n" +
+                    "Common Methods (inherited by all children): " + commonMethods.toString() + "\n\n" +
+                    "Generate a generic, domain-neutral abstract class name that:\n" +
+                    "- Represents the shared characteristics across multiple entity types\n" +
+                    "- Is NOT domain-specific (avoid names like HumanEntity, PersonBase, etc.)\n" +
+                    "- Is simple and general (e.g., Entity, Living Entity, Organism, LivingBeing, etc.)\n" +
+                    "- Uses PascalCase\n" +
+                    "- Is one or two words maximum\n\n" +
+                    "Respond with ONLY the class name, nothing else. No quotes, no explanations.";
 
             String suggestedName = llmProvider.request(prompt);
 
@@ -285,17 +332,18 @@ public class EnhancedPumlBuilder {
             suggestedName = suggestedName.trim()
                     .replaceAll("^\"|\"$", "") // Remove quotes
                     .replaceAll("^'|'$", "")
+                    .replaceAll("\\s+", " ") // Normalize spaces
                     .split("\\s+")[0]; // Take first word
 
             // Validate it's a reasonable class name (not empty, starts with uppercase)
             if (suggestedName.isEmpty() || !Character.isUpperCase(suggestedName.charAt(0))) {
-                return "AbstractEntity";
+                return "Entity";
             }
 
             return suggestedName;
         } catch (Exception e) {
             // If LLM call fails, use default name
-            return "AbstractEntity";
+            return "Entity";
         }
     }
 

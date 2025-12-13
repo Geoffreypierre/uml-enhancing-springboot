@@ -120,33 +120,26 @@
                 throw new Error("Empty response received from server");
             }
 
-            // Render the enhanced PlantUML using the local endpoint
-            const renderFormData = new FormData();
-            renderFormData.append("puml", enhancedPuml);
+            // Render the enhanced PlantUML using the online PlantUML service
+            try {
+                const encoded = compressAndEncode(enhancedPuml);
+                const imageUrl = "https://www.plantuml.com/plantuml/png/" + encoded;
 
-            const renderResponse = await fetch("/api/uml/render", {
-                method: "POST",
-                body: renderFormData
-            });
+                umlImageAfter.onload = function() {
+                    console.log("Image loaded successfully");
+                };
 
-            if (!renderResponse.ok) {
-                throw new Error("Failed to render PlantUML diagram");
+                umlImageAfter.onerror = function() {
+                    console.error("Failed to load rendered image");
+                    alert("Erreur: Impossible de charger l'image rendue.");
+                };
+
+                umlImageAfter.src = imageUrl;
+                umlImageAfter.style.display = "block";
+            } catch (error) {
+                console.error("Error encoding enhanced PlantUML:", error);
+                alert("Erreur lors du rendu de l'image: " + error.message);
             }
-
-            const imageBlob = await renderResponse.blob();
-            const imageUrl = URL.createObjectURL(imageBlob);
-
-            umlImageAfter.onload = function() {
-                console.log("Image loaded successfully");
-            };
-
-            umlImageAfter.onerror = function() {
-                console.error("Failed to load rendered image");
-                alert("Erreur: Impossible de charger l'image rendue.");
-            };
-
-            umlImageAfter.src = imageUrl;
-            umlImageAfter.style.display = "block";
         } catch (error) {
             console.error("Error:", error);
             alert("Erreur lors du traitement: " + error.message);

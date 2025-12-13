@@ -32,42 +32,114 @@ public class Diagram {
         // Get all entities from the diagram
         Collection<Entity> allEntities = new ArrayList<>();
 
-        // Try to get entities using getEntityFactory().leafs()
+        // Try to get all entities using various approaches
+
+        // Approach 1: Try using entitySupport() which should have all entities
         try {
-            var entityFactory = classDiagram.getClass().getMethod("getEntityFactory").invoke(classDiagram);
-            if (entityFactory != null) {
-                @SuppressWarnings("unchecked")
-                Collection<Entity> leafs = (Collection<Entity>) entityFactory.getClass().getMethod("leafs")
-                        .invoke(entityFactory);
-                allEntities.addAll(leafs);
+            var entitySupport = classDiagram.getClass().getMethod("entitySupport").invoke(classDiagram);
+            if (entitySupport != null) {
+                try {
+                    // Try getting all entities from entitySupport
+                    @SuppressWarnings("unchecked")
+                    Collection<Entity> supportedEntities = (Collection<Entity>) entitySupport.getClass()
+                            .getMethod("getAllEntities").invoke(entitySupport);
+                    if (supportedEntities != null && !supportedEntities.isEmpty()) {
+                        allEntities.addAll(supportedEntities);
+                        System.out.println("Successfully extracted " + supportedEntities.size() +
+                                         " entities from entitySupport().getAllEntities()");
+                    }
+                } catch (Exception ex1) {
+                    // Try other methods on entitySupport
+                    try {
+                        @SuppressWarnings("unchecked")
+                        Collection<Entity> supportedEntities = (Collection<Entity>) entitySupport.getClass()
+                                .getMethod("values").invoke(entitySupport);
+                        if (supportedEntities != null && !supportedEntities.isEmpty()) {
+                            allEntities.addAll(supportedEntities);
+                            System.out.println("Successfully extracted " + supportedEntities.size() +
+                                             " entities from entitySupport().values()");
+                        }
+                    } catch (Exception ex2) {
+                        System.err.println("Could not extract entities from entitySupport: " + ex2.getMessage());
+                    }
+                }
             }
         } catch (Exception e) {
-            // If reflection fails, fall back to collecting from links only
-            System.err.println("Warning: Could not extract entities directly, using links only: " + e.getMessage());
+            System.err.println("Warning: entitySupport() not available: " + e.getMessage());
         }
 
-        // Also collect entities from links
-        Collection<Link> links = classDiagram.getLinks();
-        Collection<Entity> entitiesFromLinks = collectUniqueEntities(links);
+        // Approach 2: Try getEntityFactory().leafs() if entities not found yet
+        if (allEntities.isEmpty()) {
+            try {
+                var entityFactory = classDiagram.getClass().getMethod("getEntityFactory").invoke(classDiagram);
+                if (entityFactory != null) {
+                    try {
+                        @SuppressWarnings("unchecked")
+                        Collection<Entity> leafs = (Collection<Entity>) entityFactory.getClass()
+                                .getMethod("leafs").invoke(entityFactory);
+                        if (leafs != null && !leafs.isEmpty()) {
+                            allEntities.addAll(leafs);
+                            System.out.println("Successfully extracted " + leafs.size() +
+                                             " entities from getEntityFactory().leafs()");
+                        }
+                    } catch (Exception ex) {
+                        System.err.println("Could not extract from leafs(): " + ex.getMessage());
+                    }
 
-        // Merge both collections (avoid duplicates)
-        for (Entity entity : entitiesFromLinks) {
-            if (!allEntities.contains(entity)) {
-                allEntities.add(entity);
+                    // If still empty, try getAllObjects
+                    if (allEntities.isEmpty()) {
+                        try {
+                            @SuppressWarnings("unchecked")
+                            Collection<Entity> allObjects = (Collection<Entity>) entityFactory.getClass()
+                                    .getMethod("getAllObjects").invoke(entityFactory);
+                            if (allObjects != null && !allObjects.isEmpty()) {
+                                allEntities.addAll(allObjects);
+                                System.out.println("Successfully extracted " + allObjects.size() +
+                                                 " entities from getEntityFactory().getAllObjects()");
+                            }
+                        } catch (Exception ex) {
+                            System.err.println("Could not extract from getAllObjects(): " + ex.getMessage());
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Warning: Could not access getEntityFactory(): " + e.getMessage());
             }
+        }
+
+        // Approach 3: Collect entities from links (for diagrams with relationships)
+        Collection<Link> links = classDiagram.getLinks();
+        if (links != null && !links.isEmpty()) {
+            Collection<Entity> entitiesFromLinks = collectUniqueEntities(links);
+            for (Entity entity : entitiesFromLinks) {
+                if (!allEntities.contains(entity)) {
+                    allEntities.add(entity);
+                }
+            }
+            System.out.println("Extracted " + entitiesFromLinks.size() + " entities from links");
         }
 
         // Process all entities (classes, interfaces, enums, etc.)
-        for (Entity entity : allEntities) {
-            Node entityNode = createEntityNode(entity);
-            entityNodeMap.put(entity, entityNode);
-            rootChildren.add(entityNode);
+        if (!allEntities.isEmpty()) {
+            System.out.println("Processing " + allEntities.size() + " entities total");
+            for (Entity entity : allEntities) {
+                Node entityNode = createEntityNode(entity);
+                entityNodeMap.put(entity, entityNode);
+                rootChildren.add(entityNode);
+                System.out.println("  - Added entity: " + entity.getName());
+            }
+        } else {
+            System.err.println("ERROR: No entities found in the diagram after trying all approaches. " +
+                             "The diagram may be empty or malformed.");
         }
 
         // Process relationships (links between entities)
-        for (Link link : links) {
-            Node relationshipNode = createRelationshipNode(link, entityNodeMap);
-            rootChildren.add(relationshipNode);
+        if (links != null && !links.isEmpty()) {
+            System.out.println("Processing " + links.size() + " relationships");
+            for (Link link : links) {
+                Node relationshipNode = createRelationshipNode(link, entityNodeMap);
+                rootChildren.add(relationshipNode);
+            }
         }
 
         // Return the root node containing all entities and relationships

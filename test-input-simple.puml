@@ -1,0 +1,19 @@
+@startuml
+
+class Oiseau {
+    +mange()
+    +dors()
+}
+
+class Chien {
+    +mange()
+    +dors()
+}
+
+class Chat {
+    +mange()
+    +dors()
+}
+
+@enduml
+
