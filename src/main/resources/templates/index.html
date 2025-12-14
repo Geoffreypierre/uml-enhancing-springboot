@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <link rel="icon" type="image/x-icon" href="/ico.ico">
@@ -7,178 +8,194 @@
 </head>
 
 <body>
-<div class="scrolling-background"></div>
-<div class="scrolling"></div>
+    <div class="scrolling-background"></div>
+    <div class="scrolling"></div>
 
-<h1 class="title">Uml enhancing</h1>
+    <h1 class="title">Uml enhancing</h1>
 
-<div class="input-container">
-    <form class="upload-form"
-          method="post"
-          enctype="multipart/form-data"
-          action="/api/uml/upload">
+    <div class="input-container">
+        <form class="upload-form" method="post" enctype="multipart/form-data" action="/api/uml/upload">
 
-        <div class="select-file">Choisissez un fichier PlantUML</div>
+            <div class="select-file">Choisissez un fichier PlantUML</div>
 
-        <label class="file-label">
-            <span class="file-button">Sélectionner un fichier</span>
-            <input type="file" name="file" class="file-input" accept=".puml">
-        </label>
+            <label class="file-label">
+                <span class="file-button">Sélectionner un fichier</span>
+                <input type="file" name="file" class="file-input" accept=".puml">
+            </label>
 
-        <div class="file-name" id="file-name">Aucun fichier sélectionné</div>
+            <div class="file-name" id="file-name">Aucun fichier sélectionné</div>
 
-        <label class="float-label">
-            <span>Seuil de pertinence (0 à 1)</span>
-            <input type="number"
-                   id="relevanceValue"
-                   name="relevance"
-                   step="0.01"
-                   min="0"
-                   max="1"
-                   class="float-input"
-                   placeholder="0.75"
-                   value="0.75"
-                   required>
-        </label>
+            <label class="float-label">
+                <span>Seuil de pertinence (0 à 1)</span>
+                <input type="number" id="relevanceValue" name="relevance" step="0.01" min="0" max="1"
+                    class="float-input" placeholder="0.75" value="0.75" required>
+            </label>
 
-        <button type="submit" class="submit-button" disabled>Traiter</button>
-    </form>
-</div>
+            <button type="submit" class="submit-button" disabled>Traiter</button>
+        </form>
+    </div>
 
 
-<div class="img-container">
-    <div class="img-container-title">UML en entrée</div>
-    <img id="uml-image" class="before-uml">
+    <div class="img-container">
+        <div class="img-container-title">UML en entrée</div>
+        <img id="uml-image" class="before-uml">
 
-    <div class="img-container-title">UML en sortie</div>
-    <img id="uml-image-after" class="after-uml">
-</div>
+        <div class="img-container-title">UML en sortie</div>
+        <img id="uml-image-after" class="after-uml">
+        <button id="download-button" class="download-button" style="display: none;">
+            Télécharger le fichier .puml
+        </button>
+    </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
 
-<script>
-    const button = document.querySelector('.submit-button');
-    const fileInput = document.querySelector('.file-input');
-    const fileName = document.getElementById('file-name');
-    const umlImage = document.getElementById('uml-image');
-    const form = document.querySelector('.upload-form');
-    const umlImageAfter = document.getElementById('uml-image-after');
+    <script>
+        const button = document.querySelector('.submit-button');
+        const fileInput = document.querySelector('.file-input');
+        const fileName = document.getElementById('file-name');
+        const umlImage = document.getElementById('uml-image');
+        const form = document.querySelector('.upload-form');
+        const umlImageAfter = document.getElementById('uml-image-after');
+        const downloadButton = document.getElementById('download-button');
 
-    function encode64(data) {
-        const r = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_";
-        let s = "";
+        let enhancedPumlContent = '';
 
-        for (let i = 0; i < data.length; i += 3) {
-            if (i + 2 === data.length) {
-                s += append3bytes(data[i], data[i + 1], 0);
-            } else if (i + 1 === data.length) {
-                s += append3bytes(data[i], 0, 0);
-            } else {
-                s += append3bytes(data[i], data[i + 1], data[i + 2]);
+        function encode64(data) {
+            const r = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_";
+            let s = "";
+
+            for (let i = 0; i < data.length; i += 3) {
+                if (i + 2 === data.length) {
+                    s += append3bytes(data[i], data[i + 1], 0);
+                } else if (i + 1 === data.length) {
+                    s += append3bytes(data[i], 0, 0);
+                } else {
+                    s += append3bytes(data[i], data[i + 1], data[i + 2]);
+                }
             }
+            return s;
         }
-        return s;
-    }
 
-    function append3bytes(b1, b2, b3) {
-        const r = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_";
-        const c1 = b1 >> 2;
-        const c2 = ((b1 & 0x3) << 4) | (b2 >> 4);
-        const c3 = ((b2 & 0xF) << 2) | (b3 >> 6);
-        const c4 = b3 & 0x3F;
-        return r.charAt(c1) + r.charAt(c2) + r.charAt(c3) + r.charAt(c4);
-    }
+        function append3bytes(b1, b2, b3) {
+            const r = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_";
+            const c1 = b1 >> 2;
+            const c2 = ((b1 & 0x3) << 4) | (b2 >> 4);
+            const c3 = ((b2 & 0xF) << 2) | (b3 >> 6);
+            const c4 = b3 & 0x3F;
+            return r.charAt(c1) + r.charAt(c2) + r.charAt(c3) + r.charAt(c4);
+        }
 
-    function compressAndEncode(text) {
-        const data = unescape(encodeURIComponent(text));
-        const compressed = pako.deflateRaw(data, { to: 'string' });
-        return encode64(compressed);
-    }
+        function compressAndEncode(text) {
+            const data = unescape(encodeURIComponent(text));
+            const compressed = pako.deflateRaw(data, { to: 'string' });
+            return encode64(compressed);
+        }
 
-    form.addEventListener('submit', async function (e) {
-        e.preventDefault();
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
 
-        const file = fileInput.files[0];
-        if (!file) return;
+            const file = fileInput.files[0];
+            if (!file) return;
 
-        const relevance = document.getElementById("relevanceValue").value;
+            const relevance = document.getElementById("relevanceValue").value;
 
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("relevance", relevance);
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("relevance", relevance);
 
-        try {
-            const response = await fetch("/api/uml/upload", {
-                method: "POST",
-                body: formData
-            });
-
-            const enhancedPuml = await response.text();
-            console.log("Enhanced PlantUML received:", enhancedPuml);
-
-            if (!enhancedPuml || enhancedPuml.trim() === "") {
-                throw new Error("Empty response received from server");
-            }
-
-            // Render the enhanced PlantUML using the online PlantUML service
             try {
-                const encoded = compressAndEncode(enhancedPuml);
-                const imageUrl = "https://www.plantuml.com/plantuml/png/" + encoded;
+                const response = await fetch("/api/uml/upload", {
+                    method: "POST",
+                    body: formData
+                });
 
-                umlImageAfter.onload = function() {
-                    console.log("Image loaded successfully");
-                };
+                const enhancedPuml = await response.text();
+                console.log("Enhanced PlantUML received:", enhancedPuml);
 
-                umlImageAfter.onerror = function() {
-                    console.error("Failed to load rendered image");
-                    alert("Erreur: Impossible de charger l'image rendue.");
-                };
+                if (!enhancedPuml || enhancedPuml.trim() === "") {
+                    throw new Error("Empty response received from server");
+                }
 
-                umlImageAfter.src = imageUrl;
-                umlImageAfter.style.display = "block";
-            } catch (error) {
-                console.error("Error encoding enhanced PlantUML:", error);
-                alert("Erreur lors du rendu de l'image: " + error.message);
-            }
-        } catch (error) {
-            console.error("Error:", error);
-            alert("Erreur lors du traitement: " + error.message);
-        }
-    });
+                // Store the enhanced PUML content for download
+                enhancedPumlContent = enhancedPuml;
 
-    fileInput.addEventListener('change', function () {
-        if (this.files.length > 0) {
-            button.disabled = false;
-
-            fileName.textContent = this.files[0].name;
-            fileName.classList.add("has-file");
-
-            const reader = new FileReader();
-
-            reader.onload = function (e) {
-                const pumlText = e.target.result;
-
+                // Render the enhanced PlantUML using the online PlantUML service
                 try {
-                    const encoded = compressAndEncode(pumlText);
+                    const encoded = compressAndEncode(enhancedPuml);
                     const imageUrl = "https://www.plantuml.com/plantuml/png/" + encoded;
 
-                    umlImage.src = imageUrl;
-                    umlImage.style.display = "block";
+                    umlImageAfter.onload = function () {
+                        console.log("Image loaded successfully");
+                        downloadButton.style.display = "block";
+                    };
+
+                    umlImageAfter.onerror = function () {
+                        console.error("Failed to load rendered image");
+                        alert("Erreur: Impossible de charger l'image rendue.");
+                    };
+
+                    umlImageAfter.src = imageUrl;
+                    umlImageAfter.style.display = "block";
                 } catch (error) {
-                    console.error("Error encoding:", error);
+                    console.error("Error encoding enhanced PlantUML:", error);
+                    alert("Erreur lors du rendu de l'image: " + error.message);
                 }
-            };
+            } catch (error) {
+                console.error("Error:", error);
+                alert("Erreur lors du traitement: " + error.message);
+            }
+        });
 
-            reader.readAsText(this.files[0]);
+        fileInput.addEventListener('change', function () {
+            if (this.files.length > 0) {
+                button.disabled = false;
 
-        } else {
-            button.disabled = true;
-            fileName.textContent = "Aucun fichier sélectionné";
-            fileName.classList.remove("has-file");
-            umlImage.style.display = "none";
-        }
-    });
-</script>
+                fileName.textContent = this.files[0].name;
+                fileName.classList.add("has-file");
+
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    const pumlText = e.target.result;
+
+                    try {
+                        const encoded = compressAndEncode(pumlText);
+                        const imageUrl = "https://www.plantuml.com/plantuml/png/" + encoded;
+
+                        umlImage.src = imageUrl;
+                        umlImage.style.display = "block";
+                    } catch (error) {
+                        console.error("Error encoding:", error);
+                    }
+                };
+
+                reader.readAsText(this.files[0]);
+
+            } else {
+                button.disabled = true;
+                fileName.textContent = "Aucun fichier sélectionné";
+                fileName.classList.remove("has-file");
+                umlImage.style.display = "none";
+            }
+        });
+
+        downloadButton.addEventListener('click', function () {
+            if (!enhancedPumlContent) {
+                alert("Aucun contenu à télécharger");
+                return;
+            }
+
+            const blob = new Blob([enhancedPumlContent], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'enhanced-diagram.puml';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        });
+    </script>
 
 </body>
 
@@ -222,8 +239,13 @@
     }
 
     @keyframes moveBackground {
-        from { background-position: 0 0; }
-        to   { background-position: -500px -500px; }
+        from {
+            background-position: 0 0;
+        }
+
+        to {
+            background-position: -500px -500px;
+        }
     }
 
     .title {
@@ -323,19 +345,19 @@
     }
 
     .before-uml {
-        display:none;
-        margin-top:25px;
-        max-width:100%;
-        border:3px solid black;
-        border-radius:8px;
+        display: none;
+        margin-top: 25px;
+        max-width: 100%;
+        border: 3px solid black;
+        border-radius: 8px;
     }
 
     .after-uml {
-        display:none;
-        margin-top:25px;
-        max-width:100%;
-        border:3px solid black;
-        border-radius:8px;
+        display: none;
+        margin-top: 25px;
+        max-width: 100%;
+        border: 3px solid black;
+        border-radius: 8px;
     }
 
     .img-container {
@@ -374,6 +396,25 @@
         font-weight: bold;
     }
 
+    .download-button {
+        margin-top: 20px;
+        background-color: #28a745;
+        border: solid 3px black;
+        padding: 12px 30px;
+        font-size: 18px;
+        border-radius: 6px;
+        box-shadow: 4px 4px 0 black;
+        transition: transform 0.1s ease;
+        cursor: pointer;
+        font-family: monospace;
+        color: white;
+        font-weight: bold;
+    }
+
+    .download-button:hover {
+        transform: translate(-2px, -2px);
+        box-shadow: 6px 6px 0 black;
+    }
 </style>
 
 </html>
