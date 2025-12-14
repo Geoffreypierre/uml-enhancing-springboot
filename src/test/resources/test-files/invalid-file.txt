@@ -1,0 +1,2 @@
+This is a test file that is not a PlantUML file.
+It should be used for testing file validation.

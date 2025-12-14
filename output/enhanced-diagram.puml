@@ -1,0 +1,182 @@
+@startuml
+abstract class DatabaseRepository {
+  connection: DatabaseConnection
+  +save(entity: Object): void
+  +delete(id: int): void
+  +findAll(): List
+  +update(entity: Object): void
+  +findById(id: int): Object
+}
+abstract class Connection {
+  username: String
+  host: String
+  port: int
+  password: String
+  +isConnected(): boolean
+  +disconnect(): void
+  +connect(): void
+}
+abstract class DataParser {
+  +stringify(object: Object): String
+  +parse(data: String): Object
+  +validate(data: String): boolean
+}
+abstract class GeometricShape {
+  height: double
+  +calculateArea(): double
+  +calculatePerimeter(): double
+  +draw(): void
+}
+abstract class Logger {
+  level: String
+  +error(message: String): void
+  +info(message: String): void
+  +warn(message: String): void
+  +log(message: String): void
+}
+abstract class PaymentMethod {
+  +processPayment(amount: double): boolean
+  +validatePayment(): boolean
+  +refund(amount: double): boolean
+}
+abstract class Worker {
+  name: String
+  id: int
+  +calculateBonus(): double
+  +getDetails(): String
+}
+abstract class NetworkRequest {
+  headers: Map
+  url: String
+  method: String
+  +setTimeout(timeout: int): void
+  +addHeader(key: String, value: String): void
+  +send(): Response
+}
+class MySQLRepository {
+}
+class PostgreSQLRepository {
+}
+class MongoDBRepository {
+}
+class DatabaseConnection {
+  +executeQuery(query: String): ResultSet
+}
+class FileConnection {
+  +readFile(path: String): byte[]
+}
+class WebServiceConnection {
+  +sendRequest(request: String): Response
+}
+class EmailSender {
+  smtpHost: String
+  smtpPort: int
+  fromAddress: String
+  +send(to: String, subject: String, body: String): void
+  +validateEmail(email: String): boolean
+  +formatMessage(subject: String, body: String): String
+}
+class SMSSender {
+  gatewayUrl: String
+  apiKey: String
+  fromNumber: String
+  +send(to: String, message: String): void
+  +validatePhone(phone: String): boolean
+  +formatMessage(message: String): String
+}
+class PushNotificationSender {
+  serviceUrl: String
+  apiToken: String
+  appId: String
+  +send(deviceId: String, message: String): void
+  +validateDeviceId(id: String): boolean
+  +formatMessage(message: String): String
+}
+class JSONParser {
+}
+class XMLParser {
+}
+class YAMLParser {
+}
+class Rectangle {
+  width: double
+}
+class Circle {
+  radius: double
+}
+class Triangle {
+  base: double
+  sideA: double
+  sideB: double
+  sideC: double
+}
+class FileLogger {
+  filePath: String
+}
+class ConsoleLogger {
+  outputStream: PrintStream
+}
+class DatabaseLogger {
+  connection: DatabaseConnection
+}
+class CreditCardPayment {
+  cardNumber: String
+  cvv: String
+  expiryDate: String
+}
+class PayPalPayment {
+  email: String
+  token: String
+}
+class BankTransferPayment {
+  accountNumber: String
+  routingNumber: String
+}
+class Employee {
+  salary: double
+  department: String
+  +updateSalary(newSalary: double): void
+}
+class Contractor {
+  hourlyRate: double
+  contractDuration: int
+  +updateRate(newRate: double): void
+}
+class Intern {
+  stipend: double
+  mentor: String
+  +assignMentor(mentor: String): void
+}
+class HttpRequest {
+}
+class HttpsRequest {
+  certificate: String
+}
+class FTPRequest {
+  credentials: String
+}
+DatabaseRepository <|-- MySQLRepository
+DatabaseRepository <|-- PostgreSQLRepository
+DatabaseRepository <|-- MongoDBRepository
+Connection <|-- DatabaseConnection
+Connection <|-- FileConnection
+Connection <|-- WebServiceConnection
+DataParser <|-- JSONParser
+DataParser <|-- XMLParser
+DataParser <|-- YAMLParser
+GeometricShape <|-- Rectangle
+GeometricShape <|-- Circle
+GeometricShape <|-- Triangle
+Logger <|-- FileLogger
+Logger <|-- ConsoleLogger
+Logger <|-- DatabaseLogger
+PaymentMethod <|-- CreditCardPayment
+PaymentMethod <|-- PayPalPayment
+PaymentMethod <|-- BankTransferPayment
+Worker <|-- Employee
+Worker <|-- Contractor
+Worker <|-- Intern
+NetworkRequest <|-- HttpRequest
+NetworkRequest <|-- HttpsRequest
+NetworkRequest <|-- FTPRequest
+@enduml

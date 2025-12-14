@@ -1,0 +1,46 @@
+@startuml
+class Vehicle {
+  + brand: String
+  + model: String
+  + year: int
+  + start()
+  + stop()
+}
+
+class Car {
+  + numberOfDoors: int
+  + trunk: String
+  + start()
+  + stop()
+  + openTrunk()
+}
+
+class Motorcycle {
+  + hasWindshield: boolean
+  + start()
+  + stop()
+  + wheelie()
+}
+
+class ElectricCar {
+  + batteryCapacity: int
+  + numberOfDoors: int
+  + start()
+  + stop()
+  + charge()
+  + openTrunk()
+}
+
+class Truck {
+  + cargoCapacity: int
+  + numberOfDoors: int
+  + start()
+  + stop()
+  + loadCargo()
+}
+
+Car --> Vehicle
+Motorcycle --> Vehicle
+ElectricCar --> Vehicle
+Truck --> Vehicle
+@enduml
