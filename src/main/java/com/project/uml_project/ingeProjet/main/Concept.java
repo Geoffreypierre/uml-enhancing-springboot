@@ -1,8 +1,8 @@
 package com.project.uml_project.ingeProjet.main;
 
-import com.project.uml_project.ingeProjet.LLM.LLMProvider;
-
 import java.util.Optional;
+
+import com.project.uml_project.ingeProjet.LLM.LLMProvider;
 
 public class Concept {
     private static final String PROMPT_TEMPLATE_SCORE = "Analyze this UML concept and rate its relevance for a well-designed class diagram.\n"
@@ -136,6 +136,10 @@ public class Concept {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public void setLlmProvider(LLMProvider llmProvider) {
+        this.llmProvider = llmProvider;
     }
 
 };

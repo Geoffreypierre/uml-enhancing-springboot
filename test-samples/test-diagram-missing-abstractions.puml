@@ -1,0 +1,248 @@
+@startuml
+
+class DatabaseConnection {
+  - host: String
+  - port: int
+  - username: String
+  - password: String
+  + connect(): void
+  + disconnect(): void
+  + executeQuery(query: String): ResultSet
+  + isConnected(): boolean
+}
+
+class FileConnection {
+  - host: String
+  - port: int
+  - username: String
+  - password: String
+  + connect(): void
+  + disconnect(): void
+  + readFile(path: String): byte[]
+  + isConnected(): boolean
+}
+
+class WebServiceConnection {
+  - host: String
+  - port: int
+  - username: String
+  - password: String
+  + connect(): void
+  + disconnect(): void
+  + sendRequest(request: String): Response
+  + isConnected(): boolean
+}
+
+class EmailSender {
+  - smtpHost: String
+  - smtpPort: int
+  - fromAddress: String
+  + send(to: String, subject: String, body: String): void
+  + validateEmail(email: String): boolean
+  + formatMessage(subject: String, body: String): String
+}
+
+class SMSSender {
+  - gatewayUrl: String
+  - apiKey: String
+  - fromNumber: String
+  + send(to: String, message: String): void
+  + validatePhone(phone: String): boolean
+  + formatMessage(message: String): String
+}
+
+class PushNotificationSender {
+  - serviceUrl: String
+  - apiToken: String
+  - appId: String
+  + send(deviceId: String, message: String): void
+  + validateDeviceId(id: String): boolean
+  + formatMessage(message: String): String
+}
+
+class MySQLRepository {
+  - connection: DatabaseConnection
+  + save(entity: Object): void
+  + findById(id: int): Object
+  + findAll(): List
+  + delete(id: int): void
+  + update(entity: Object): void
+}
+
+class PostgreSQLRepository {
+  - connection: DatabaseConnection
+  + save(entity: Object): void
+  + findById(id: int): Object
+  + findAll(): List
+  + delete(id: int): void
+  + update(entity: Object): void
+}
+
+class MongoDBRepository {
+  - connection: DatabaseConnection
+  + save(entity: Object): void
+  + findById(id: int): Object
+  + findAll(): List
+  + delete(id: int): void
+  + update(entity: Object): void
+}
+
+class JSONParser {
+  + parse(data: String): Object
+  + validate(data: String): boolean
+  + stringify(object: Object): String
+}
+
+class XMLParser {
+  + parse(data: String): Object
+  + validate(data: String): boolean
+  + stringify(object: Object): String
+}
+
+class YAMLParser {
+  + parse(data: String): Object
+  + validate(data: String): boolean
+  + stringify(object: Object): String
+}
+
+class Rectangle {
+  - width: double
+  - height: double
+  + calculateArea(): double
+  + calculatePerimeter(): double
+  + draw(): void
+}
+
+class Circle {
+  - radius: double
+  + calculateArea(): double
+  + calculatePerimeter(): double
+  + draw(): void
+}
+
+class Triangle {
+  - base: double
+  - height: double
+  - sideA: double
+  - sideB: double
+  - sideC: double
+  + calculateArea(): double
+  + calculatePerimeter(): double
+  + draw(): void
+}
+
+class FileLogger {
+  - filePath: String
+  - level: String
+  + log(message: String): void
+  + error(message: String): void
+  + warn(message: String): void
+  + info(message: String): void
+}
+
+class ConsoleLogger {
+  - outputStream: PrintStream
+  - level: String
+  + log(message: String): void
+  + error(message: String): void
+  + warn(message: String): void
+  + info(message: String): void
+}
+
+class DatabaseLogger {
+  - connection: DatabaseConnection
+  - level: String
+  + log(message: String): void
+  + error(message: String): void
+  + warn(message: String): void
+  + info(message: String): void
+}
+
+class CreditCardPayment {
+  - cardNumber: String
+  - cvv: String
+  - expiryDate: String
+  + processPayment(amount: double): boolean
+  + validatePayment(): boolean
+  + refund(amount: double): boolean
+}
+
+class PayPalPayment {
+  - email: String
+  - token: String
+  + processPayment(amount: double): boolean
+  + validatePayment(): boolean
+  + refund(amount: double): boolean
+}
+
+class BankTransferPayment {
+  - accountNumber: String
+  - routingNumber: String
+  + processPayment(amount: double): boolean
+  + validatePayment(): boolean
+  + refund(amount: double): boolean
+}
+
+class Employee {
+  - id: int
+  - name: String
+  - salary: double
+  - department: String
+  + calculateBonus(): double
+  + getDetails(): String
+  + updateSalary(newSalary: double): void
+}
+
+class Contractor {
+  - id: int
+  - name: String
+  - hourlyRate: double
+  - contractDuration: int
+  + calculateBonus(): double
+  + getDetails(): String
+  + updateRate(newRate: double): void
+}
+
+class Intern {
+  - id: int
+  - name: String
+  - stipend: double
+  - mentor: String
+  + calculateBonus(): double
+  + getDetails(): String
+  + assignMentor(mentor: String): void
+}
+
+class HttpRequest {
+  - url: String
+  - method: String
+  - headers: Map
+  + send(): Response
+  + addHeader(key: String, value: String): void
+  + setTimeout(timeout: int): void
+}
+
+class HttpsRequest {
+  - url: String
+  - method: String
+  - headers: Map
+  - certificate: String
+  + send(): Response
+  + addHeader(key: String, value: String): void
+  + setTimeout(timeout: int): void
+}
+
+class FTPRequest {
+  - url: String
+  - method: String
+  - credentials: String
+  + send(): Response
+  + addHeader(key: String, value: String): void
+  + setTimeout(timeout: int): void
+}
+
+MySQLRepository --> DatabaseConnection
+PostgreSQLRepository --> DatabaseConnection
+MongoDBRepository --> DatabaseConnection
+
+@enduml

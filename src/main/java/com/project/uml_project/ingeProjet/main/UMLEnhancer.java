@@ -5,7 +5,6 @@ import com.project.uml_project.ingeProjet.fca4j.FCA4JAdapter;
 import com.project.uml_project.ingeProjet.utils.Diagram;
 import com.project.uml_project.ingeProjet.utils.Node;
 import com.project.uml_project.ingeProjet.utils.Parser;
-import com.project.uml_project.ingeProjet.utils.PlantUMLReader;
 
 public class UMLEnhancer {
     private String token;
@@ -21,13 +20,24 @@ public class UMLEnhancer {
         this.pumlBuilder = pumlBuilder;
     }
 
-    // Charge les filtres, fichiers
-    public void init(String pathToInputUml, float relevanceThreshold) throws Exception {
-        // Récupère le PUML original dans le fichier
-        originalUml = PlantUMLReader.lireContenuPUML(pathToInputUml);
+    /**
+     * Initialize the UML enhancer with content and threshold.
+     * 
+     * @param pumlContent        The PlantUML diagram content to enhance
+     * @param relevanceThreshold Score threshold for filtering concepts
+     *                           (recommended: 0.3-0.5)
+     *                           - 0.8+: Only high-quality, well-defined concepts
+     *                           - 0.5+: Moderate quality concepts
+     *                           - 0.3+: Include lower quality but potentially
+     *                           useful concepts
+     *                           - 0.1 or lower: Too permissive, may include noise
+     */
+    public void init(String pumlContent, float relevanceThreshold) throws Exception {
+        // Utilise directement le contenu PUML fourni
+        originalUml = pumlContent;
 
         if (originalUml == null || originalUml.isEmpty()) {
-            throw new Exception("Failed to read PUML file or file is empty: " + pathToInputUml);
+            throw new Exception("PUML content is null or empty");
         }
 
         parser.setPuml(originalUml);
@@ -35,6 +45,18 @@ public class UMLEnhancer {
         // Use environment variable for token if not already set
         if (token == null || token.isEmpty()) {
             token = System.getenv("OPENAI_API_KEY");
+        }
+
+        // Validate token is available
+        if (token == null || token.isEmpty()) {
+            throw new Exception(
+                    "OpenAI API key not found. Please set the OPENAI_API_KEY environment variable or provide a token via setToken().");
+        }
+
+        // Warn if threshold is too low
+        if (relevanceThreshold < 0.3f) {
+            System.out.println("Warning: Threshold " + relevanceThreshold
+                    + " is very low. Recommended: 0.3-0.5 for best results.");
         }
 
         pumlBuilder.setLlmProvider(new LLMProvider(token, "gpt-4o-mini"));

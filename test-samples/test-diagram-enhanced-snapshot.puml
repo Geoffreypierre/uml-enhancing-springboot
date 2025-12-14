@@ -1,5 +1,4 @@
 @startuml
-' Concrete Classes
 class Person {
   name: String
   age: int
@@ -21,7 +20,6 @@ class Company {
   +getEmployeeCount(): int
 }
 
-' Associations
 Person "1" -- "0..1" Address : lives_at
 Person "*" -- "1" Company : works_for
 @enduml

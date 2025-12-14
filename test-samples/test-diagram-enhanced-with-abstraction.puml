@@ -1,6 +1,5 @@
 @startuml
-' Abstract Classes (Common Attributes/Methods)
-abstract class NamedEntity {
+abstract class AbstractEntity {
   age: int
   name: String
   +setAge(age: int): void
@@ -8,7 +7,6 @@ abstract class NamedEntity {
   +setName(name: String): void
   +getAge(): int
 }
-' Concrete Classes
 class Address {
   street: String
   city: String
@@ -21,10 +19,8 @@ class Company {
   +addEmployee(person: Person): void
   +getEmployeeCount(): int
 }
-' Inheritance Relationships
-NamedEntity <|-- Address
-NamedEntity <|-- Company
+AbstractEntity <|-- Address
+AbstractEntity <|-- Company
 
-' Associations
 Address "*" -- "1" Company : employs
 @enduml

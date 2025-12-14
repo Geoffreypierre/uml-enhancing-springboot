@@ -1,0 +1,169 @@
+@startuml
+abstract class BaseEntity {
+  headers: Map
+  username: String
+  connection: DatabaseConnection
+  host: String
+  port: int
+  name: String
+  password: String
+  url: String
+  height: double
+  method: String
+  id: int
+  level: String
+  +save(entity: Object): void
+  +error(message: String): void
+  +stringify(object: Object): String
+  +delete(id: int): void
+  +parse(data: String): Object
+  +validatePayment(): boolean
+  +calculateArea(): double
+  +info(message: String): void
+  +update(entity: Object): void
+  +findById(id: int): Object
+  +log(message: String): void
+  +addHeader(key: String, value: String): void
+  +calculateBonus(): double
+  +getDetails(): String
+  +refund(amount: double): boolean
+  +calculatePerimeter(): double
+  +formatMessage(message: String): String
+  +draw(): void
+  +setTimeout(timeout: int): void
+  +processPayment(amount: double): boolean
+  +send(): Response
+  +disconnect(): void
+  +connect(): void
+  +validate(data: String): boolean
+  +isConnected(): boolean
+  +findAll(): List
+  +warn(message: String): void
+}
+class MySQLRepository {
+}
+class DatabaseConnection {
+  +executeQuery(query: String): ResultSet
+}
+class PostgreSQLRepository {
+}
+class MongoDBRepository {
+}
+class FileConnection {
+  +readFile(path: String): byte[]
+}
+class WebServiceConnection {
+  +sendRequest(request: String): Response
+}
+class EmailSender {
+  smtpHost: String
+  smtpPort: int
+  fromAddress: String
+  +send(to: String, subject: String, body: String): void
+  +validateEmail(email: String): boolean
+  +formatMessage(subject: String, body: String): String
+}
+class SMSSender {
+  gatewayUrl: String
+  apiKey: String
+  fromNumber: String
+  +send(to: String, message: String): void
+  +validatePhone(phone: String): boolean
+}
+class PushNotificationSender {
+  serviceUrl: String
+  apiToken: String
+  appId: String
+  +send(deviceId: String, message: String): void
+  +validateDeviceId(id: String): boolean
+}
+class JSONParser {
+}
+class XMLParser {
+}
+class YAMLParser {
+}
+class Rectangle {
+  width: double
+}
+class Circle {
+  radius: double
+}
+class Triangle {
+  base: double
+  sideA: double
+  sideB: double
+  sideC: double
+}
+class FileLogger {
+  filePath: String
+}
+class ConsoleLogger {
+  outputStream: PrintStream
+}
+class DatabaseLogger {
+}
+class CreditCardPayment {
+  cardNumber: String
+  cvv: String
+  expiryDate: String
+}
+class PayPalPayment {
+  email: String
+  token: String
+}
+class BankTransferPayment {
+  accountNumber: String
+  routingNumber: String
+}
+class Employee {
+  salary: double
+  department: String
+  +updateSalary(newSalary: double): void
+}
+class Contractor {
+  hourlyRate: double
+  contractDuration: int
+  +updateRate(newRate: double): void
+}
+class Intern {
+  stipend: double
+  mentor: String
+  +assignMentor(mentor: String): void
+}
+class HttpRequest {
+}
+class HttpsRequest {
+  certificate: String
+}
+class FTPRequest {
+  credentials: String
+}
+BaseEntity <|-- MySQLRepository
+BaseEntity <|-- DatabaseConnection
+BaseEntity <|-- PostgreSQLRepository
+BaseEntity <|-- MongoDBRepository
+BaseEntity <|-- FileConnection
+BaseEntity <|-- WebServiceConnection
+BaseEntity <|-- EmailSender
+BaseEntity <|-- SMSSender
+BaseEntity <|-- PushNotificationSender
+BaseEntity <|-- JSONParser
+BaseEntity <|-- XMLParser
+BaseEntity <|-- YAMLParser
+BaseEntity <|-- Rectangle
+BaseEntity <|-- Circle
+BaseEntity <|-- Triangle
+BaseEntity <|-- FileLogger
+BaseEntity <|-- ConsoleLogger
+BaseEntity <|-- DatabaseLogger
+BaseEntity <|-- CreditCardPayment
+BaseEntity <|-- PayPalPayment
+BaseEntity <|-- BankTransferPayment
+BaseEntity <|-- Employee
+BaseEntity <|-- Contractor
+BaseEntity <|-- Intern
+BaseEntity <|-- HttpRequest
+BaseEntity <|-- HttpsRequest
+BaseEntity <|-- FTPRequest
+@enduml
