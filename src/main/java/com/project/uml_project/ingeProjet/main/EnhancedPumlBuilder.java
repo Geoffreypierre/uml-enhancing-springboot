@@ -2,6 +2,8 @@ package com.project.uml_project.ingeProjet.main;
 
 import com.project.uml_project.ingeProjet.LLM.LLMProvider;
 import com.project.uml_project.ingeProjet.utils.Diagram;
+import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 public class EnhancedPumlBuilder {
 
@@ -22,51 +24,91 @@ public class EnhancedPumlBuilder {
             return;
         }
 
-        System.out.println("EnhancedPumlBuilder: Starting enhancement with " + concepts.size() + " concepts");
+        int originalSize = concepts.size();
+        System.out.println("EnhancedPumlBuilder: Starting enhancement with " + originalSize + " concepts");
 
-        // Set the LLM provider on each concept first
-        for (Concept concept : concepts) {
+        // Pre-filter obvious low-quality concepts before expensive LLM calls
+        java.util.List<Concept> filteredConcepts = concepts.stream()
+                .filter(concept -> {
+                    String name = concept.getOriginalName();
+                    if (name == null)
+                        return false;
+
+                    // Filter out auto-generated relationship concepts
+                    if (name.contains("_to_") && name.contains("_NULL")) {
+                        System.out.println("  Pre-filtered: " + name + " (auto-generated relationship)");
+                        return false;
+                    }
+
+                    // Filter out UUID-like names
+                    if (name.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) {
+                        System.out.println("  Pre-filtered: " + name + " (UUID)");
+                        return false;
+                    }
+
+                    // Filter out concepts with no attributes and no methods
+                    if ((concept.getAttribute() == null || concept.getAttribute().isEmpty()) &&
+                            (concept.getMethod() == null || concept.getMethod().isEmpty())) {
+                        System.out.println("  Pre-filtered: " + name + " (no attributes/methods)");
+                        return false;
+                    }
+
+                    return true;
+                })
+                .collect(Collectors.toList());
+
+        System.out.println("Pre-filtered from " + originalSize + " to " + filteredConcepts.size() + " concepts");
+
+        if (filteredConcepts.isEmpty()) {
+            concepts = new java.util.ArrayList<>();
+            return;
+        }
+
+        // Set the LLM provider on each concept
+        for (Concept concept : filteredConcepts) {
             concept.setLlmProvider(llmProvider);
         }
-        
-        // Appelle le LLM pour noter les concepts et les nommer
-        for (Concept concept : concepts) {
-            try {
-                float score = concept.relevanceScore();
-                String newName = concept.setNameFromLLM();
-                System.out.println("  Concept '" + concept.getOriginalName() +
-                                 "' -> '" + newName + "' (score: " + score + ")");
-            } catch (Exception e) {
-                System.err.println("  Warning: Could not score concept '" + concept.getOriginalName() + "': " + e.getMessage());
-            }
+
+        // Process LLM calls in parallel using thread pool
+        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        java.util.List<CompletableFuture<Void>> futures = new java.util.ArrayList<>();
+
+        for (Concept concept : filteredConcepts) {
+            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                try {
+                    float score = concept.relevanceScore();
+                    String newName = concept.setNameFromLLM();
+                    System.out.println("  Concept '" + concept.getOriginalName() +
+                            "' -> '" + newName + "' (score: " + score + ")");
+                } catch (Exception e) {
+                    System.err.println("  Warning: Could not process concept '" + concept.getOriginalName() + "': "
+                            + e.getMessage());
+                }
+            }, executor);
+            futures.add(future);
         }
 
-        // Filtre les concepts avec le treshold
-        int beforeFilter = concepts.size();
-        concepts.removeIf(concept -> {
-            try {
-                float score = concept.relevanceScore();
-                String name = concept.getOriginalName();
+        // Wait for all LLM calls to complete
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        executor.shutdown();
 
-                // For relationship concepts (containing "_to_"), apply a stricter threshold
-                // since they are often less significant than entity concepts
-                if (name != null && name.contains("_to_")) {
-                    // Relationships need higher relevance score (e.g., 1.5x the threshold)
-                    float relationshipThreshold = Math.min(1.0f, filterTreeshold * 1.5f);
-                    return score < relationshipThreshold;
-                }
+        // Filter by relevance score threshold
+        int beforeThreshold = filteredConcepts.size();
+        java.util.List<Concept> finalConcepts = filteredConcepts.stream()
+                .filter(concept -> {
+                    try {
+                        float score = concept.relevanceScore();
+                        return score >= filterTreeshold;
+                    } catch (Exception e) {
+                        System.err.println("  Warning: Filtering out concept due to scoring error");
+                        return false;
+                    }
+                })
+                .collect(Collectors.toList());
 
-                // For entity concepts, use the normal threshold
-                return score < filterTreeshold;
-            } catch (Exception e) {
-                // If we can't get the relevance score, filter out the concept
-                System.err.println("  Warning: Filtering out concept due to scoring error");
-                return true;
-            }
-        });
-        
-        System.out.println("EnhancedPumlBuilder: Filtered from " + beforeFilter + 
-                         " to " + concepts.size() + " concepts (threshold: " + filterTreeshold + ")");
+        concepts = finalConcepts;
+        System.out.println("EnhancedPumlBuilder: Filtered by threshold from " + beforeThreshold +
+                " to " + concepts.size() + " concepts (threshold: " + filterTreeshold + ")");
     }
 
     // exporte le nouveau diagramme en puml
@@ -139,6 +181,29 @@ public class EnhancedPumlBuilder {
                 entityConcepts.add(concept);
             }
         }
+
+        // Cluster entities into natural groups before creating abstractions
+        java.util.List<java.util.List<Concept>> clusters = clusterEntitiesBySimarity(entityConcepts);
+
+        // Process each cluster separately to create hierarchical abstractions
+        if (clusters.size() > 1) {
+            System.out.println("Found " + clusters.size() + " natural groupings of classes");
+            for (int i = 0; i < clusters.size(); i++) {
+                java.util.List<Concept> cluster = clusters.get(i);
+                if (cluster.size() >= 2) {
+                    System.out.println("  Cluster " + (i + 1) + ": " + cluster.size() + " classes");
+                    createAbstractionForCluster(cluster, enhancement);
+                } else {
+                    // Single entity, export without abstraction
+                    exportConcreteClass(cluster.get(0), enhancement, null, java.util.Collections.emptySet(),
+                            java.util.Collections.emptySet());
+                }
+            }
+            return enhancement;
+        }
+
+        // Fall back to original logic if clustering produces only one group
+        entityConcepts = clusters.isEmpty() ? entityConcepts : clusters.get(0);
 
         // Find common attributes and methods across entities
         java.util.Map<String, Integer> attributeFrequency = new java.util.HashMap<>();
@@ -263,9 +328,10 @@ public class EnhancedPumlBuilder {
                     boolean entity2Exists = entityConcepts.stream()
                             .anyMatch(e -> e.getOriginalName().equals(entity2));
 
-                    // CRITICAL: Skip relationships between sibling classes (both are children of the same abstract class)
+                    // CRITICAL: Skip relationships between sibling classes (both are children of
+                    // the same abstract class)
                     boolean bothAreSiblings = childClassNames.contains(entity1) &&
-                                              childClassNames.contains(entity2);
+                            childClassNames.contains(entity2);
 
                     // Only create association if both entities exist AND they are not siblings
                     if (entity1Exists && entity2Exists && !bothAreSiblings) {
@@ -305,46 +371,13 @@ public class EnhancedPumlBuilder {
 
     /**
      * Generate a meaningful name for the abstract parent class using LLM
+     * This is deprecated - use generateAbstractClassNameForCluster for better
+     * context-aware naming
      */
+    @Deprecated
     private String generateAbstractClassName(java.util.Set<String> commonAttributes,
             java.util.Set<String> commonMethods) {
-        // If no LLM provider, use default name
-        if (llmProvider == null) {
-            return "Entity";
-        }
-
-        try {
-            // Build a prompt that emphasizes generic naming, not specific domains
-            String prompt = "You are naming an abstract parent class that will be inherited by multiple concrete classes.\n\n" +
-                    "Common Attributes (inherited by all children): " + commonAttributes.toString() + "\n" +
-                    "Common Methods (inherited by all children): " + commonMethods.toString() + "\n\n" +
-                    "Generate a generic, domain-neutral abstract class name that:\n" +
-                    "- Represents the shared characteristics across multiple entity types\n" +
-                    "- Is NOT domain-specific (avoid names like HumanEntity, PersonBase, etc.)\n" +
-                    "- Is simple and general (e.g., Entity, Living Entity, Organism, LivingBeing, etc.)\n" +
-                    "- Uses PascalCase\n" +
-                    "- Is one or two words maximum\n\n" +
-                    "Respond with ONLY the class name, nothing else. No quotes, no explanations.";
-
-            String suggestedName = llmProvider.request(prompt);
-
-            // Clean up the response
-            suggestedName = suggestedName.trim()
-                    .replaceAll("^\"|\"$", "") // Remove quotes
-                    .replaceAll("^'|'$", "")
-                    .replaceAll("\\s+", " ") // Normalize spaces
-                    .split("\\s+")[0]; // Take first word
-
-            // Validate it's a reasonable class name (not empty, starts with uppercase)
-            if (suggestedName.isEmpty() || !Character.isUpperCase(suggestedName.charAt(0))) {
-                return "Entity";
-            }
-
-            return suggestedName;
-        } catch (Exception e) {
-            // If LLM call fails, use default name
-            return "Entity";
-        }
+        return "Entity"; // Fallback for legacy code paths
     }
 
     public java.util.Collection<Concept> getConcepts() {
@@ -377,6 +410,248 @@ public class EnhancedPumlBuilder {
 
     public void setLlmProvider(LLMProvider llmProvider) {
         this.llmProvider = llmProvider;
+    }
+
+    /**
+     * Cluster entities by similarity based on shared methods and attributes.
+     * Uses a simple similarity threshold to group related classes.
+     */
+    private java.util.List<java.util.List<Concept>> clusterEntitiesBySimarity(java.util.List<Concept> entities) {
+        if (entities.size() <= 2) {
+            // Too few entities to cluster meaningfully
+            return java.util.Collections.singletonList(entities);
+        }
+
+        java.util.List<java.util.List<Concept>> clusters = new java.util.ArrayList<>();
+        java.util.Set<Concept> processed = new java.util.HashSet<>();
+
+        for (Concept entity : entities) {
+            if (processed.contains(entity))
+                continue;
+
+            java.util.List<Concept> cluster = new java.util.ArrayList<>();
+            cluster.add(entity);
+            processed.add(entity);
+
+            // Find similar entities
+            for (Concept other : entities) {
+                if (processed.contains(other))
+                    continue;
+
+                double similarity = calculateSimilarity(entity, other);
+                // Threshold of 0.3 means at least 30% of methods/attributes in common
+                if (similarity >= 0.3) {
+                    cluster.add(other);
+                    processed.add(other);
+                }
+            }
+
+            clusters.add(cluster);
+        }
+
+        return clusters;
+    }
+
+    /**
+     * Calculate similarity between two concepts based on Jaccard index of methods
+     * and attributes.
+     */
+    private double calculateSimilarity(Concept c1, Concept c2) {
+        java.util.Set<String> methods1 = new java.util.HashSet<>(c1.getMethod());
+        java.util.Set<String> methods2 = new java.util.HashSet<>(c2.getMethod());
+        java.util.Set<String> attrs1 = new java.util.HashSet<>(c1.getAttribute());
+        java.util.Set<String> attrs2 = new java.util.HashSet<>(c2.getAttribute());
+
+        // Combine methods and attributes
+        java.util.Set<String> set1 = new java.util.HashSet<>();
+        set1.addAll(methods1);
+        set1.addAll(attrs1);
+
+        java.util.Set<String> set2 = new java.util.HashSet<>();
+        set2.addAll(methods2);
+        set2.addAll(attrs2);
+
+        if (set1.isEmpty() && set2.isEmpty())
+            return 0.0;
+
+        // Calculate Jaccard similarity
+        java.util.Set<String> intersection = new java.util.HashSet<>(set1);
+        intersection.retainAll(set2);
+
+        java.util.Set<String> union = new java.util.HashSet<>(set1);
+        union.addAll(set2);
+
+        return union.isEmpty() ? 0.0 : (double) intersection.size() / union.size();
+    }
+
+    /**
+     * Create abstraction for a cluster of similar entities.
+     */
+    private void createAbstractionForCluster(java.util.List<Concept> cluster, Enhancement enhancement) {
+        // Find common attributes and methods
+        java.util.Map<String, Integer> attributeFrequency = new java.util.HashMap<>();
+        java.util.Map<String, Integer> methodFrequency = new java.util.HashMap<>();
+
+        for (Concept entity : cluster) {
+            for (String attr : entity.getAttribute()) {
+                attributeFrequency.put(attr, attributeFrequency.getOrDefault(attr, 0) + 1);
+            }
+            for (String method : entity.getMethod()) {
+                methodFrequency.put(method, methodFrequency.getOrDefault(method, 0) + 1);
+            }
+        }
+
+        // Get total unique methods and attributes across cluster
+        int totalUniqueMembers = attributeFrequency.size() + methodFrequency.size();
+
+        // Identify common members (appear in at least 50% of entities in cluster)
+        int minFrequency = Math.max(2, cluster.size() / 2);
+        java.util.Set<String> commonAttributes = new java.util.HashSet<>();
+        java.util.Set<String> commonMethods = new java.util.HashSet<>();
+
+        for (var entry : attributeFrequency.entrySet()) {
+            if (entry.getValue() >= minFrequency) {
+                commonAttributes.add(entry.getKey());
+            }
+        }
+
+        for (var entry : methodFrequency.entrySet()) {
+            if (entry.getValue() >= minFrequency) {
+                commonMethods.add(entry.getKey());
+            }
+        }
+
+        // God class detection: if common members > 50% of all unique members, this is a
+        // god class
+        int commonMemberCount = commonAttributes.size() + commonMethods.size();
+        double commonRatio = totalUniqueMembers == 0 ? 0.0 : (double) commonMemberCount / totalUniqueMembers;
+
+        if (commonRatio > 0.5 && cluster.size() > 3) {
+            System.out.println("  Warning: Detected potential god class (" + commonRatio * 100
+                    + "% common members). Skipping abstraction.");
+            // Export classes without abstraction to avoid god class
+            for (Concept entity : cluster) {
+                exportConcreteClass(entity, enhancement, null, java.util.Collections.emptySet(),
+                        java.util.Collections.emptySet());
+            }
+            return;
+        }
+
+        // Create abstract parent if there are meaningful common members
+        if (!commonAttributes.isEmpty() || !commonMethods.isEmpty()) {
+            // Generate domain-specific name for this cluster
+            String abstractClassName = generateAbstractClassNameForCluster(cluster, commonAttributes, commonMethods);
+
+            StringBuilder abstractClass = new StringBuilder();
+            abstractClass.append("abstract class ").append(abstractClassName).append(" {\n");
+
+            for (String attr : commonAttributes) {
+                abstractClass.append("  ").append(attr).append("\n");
+            }
+
+            for (String method : commonMethods) {
+                abstractClass.append("  +").append(method).append("\n");
+            }
+
+            abstractClass.append("}");
+            enhancement.abstractClasses.add(abstractClass.toString());
+
+            // Create concrete classes with inheritance
+            for (Concept entity : cluster) {
+                exportConcreteClass(entity, enhancement, abstractClassName, commonAttributes, commonMethods);
+            }
+        } else {
+            // No common members, export without abstraction
+            for (Concept entity : cluster) {
+                exportConcreteClass(entity, enhancement, null, java.util.Collections.emptySet(),
+                        java.util.Collections.emptySet());
+            }
+        }
+    }
+
+    /**
+     * Export a concrete class, optionally with inheritance.
+     */
+    private void exportConcreteClass(Concept entity, Enhancement enhancement,
+            String parentClass,
+            java.util.Set<String> commonAttributes,
+            java.util.Set<String> commonMethods) {
+        StringBuilder concreteClass = new StringBuilder();
+        concreteClass.append("class ").append(entity.getOriginalName()).append(" {\n");
+
+        // Add only unique attributes
+        for (String attr : entity.getAttribute()) {
+            if (!commonAttributes.contains(attr)) {
+                concreteClass.append("  ").append(attr).append("\n");
+            }
+        }
+
+        // Add only unique methods
+        for (String method : entity.getMethod()) {
+            if (!commonMethods.contains(method)) {
+                concreteClass.append("  +").append(method).append("\n");
+            }
+        }
+
+        concreteClass.append("}");
+        enhancement.concreteClasses.add(concreteClass.toString());
+
+        // Add inheritance if parent exists
+        if (parentClass != null) {
+            enhancement.inheritanceRelations.add(parentClass + " <|-- " + entity.getOriginalName());
+        }
+    }
+
+    /**
+     * Generate abstraction name with domain context from cluster.
+     */
+    private String generateAbstractClassNameForCluster(java.util.List<Concept> cluster,
+            java.util.Set<String> commonAttributes,
+            java.util.Set<String> commonMethods) {
+        if (llmProvider == null) {
+            return "Entity";
+        }
+
+        try {
+            // Build class names list for context
+            String classNames = cluster.stream()
+                    .map(Concept::getOriginalName)
+                    .collect(Collectors.joining(", "));
+
+            String prompt = "You are naming an abstract parent class for a group of related concrete classes.\n\n" +
+                    "Concrete Classes: " + classNames + "\n" +
+                    "Common Attributes: " + commonAttributes.toString() + "\n" +
+                    "Common Methods: " + commonMethods.toString() + "\n\n" +
+                    "Analyze the class names and shared characteristics to identify their domain.\n" +
+                    "Generate a meaningful, domain-specific abstract class name that:\n" +
+                    "- Captures the essence of what these classes represent\n" +
+                    "- Is specific to their domain (e.g., Connection, Logger, Parser, Shape, Payment, Worker, Request)\n"
+                    +
+                    "- Is NOT overly generic (avoid Entity, BaseEntity, etc.)\n" +
+                    "- Uses PascalCase\n" +
+                    "- Is 1-2 words maximum\n\n" +
+                    "Examples:\n" +
+                    "- Classes: MySQLRepository, PostgreSQLRepository, MongoDBRepository -> 'Repository'\n" +
+                    "- Classes: FileLogger, ConsoleLogger, DatabaseLogger -> 'Logger'\n" +
+                    "- Classes: JSONParser, XMLParser, YAMLParser -> 'Parser'\n" +
+                    "- Classes: Rectangle, Circle, Triangle -> 'Shape'\n\n" +
+                    "Respond with ONLY the class name, nothing else.";
+
+            String suggestedName = llmProvider.request(prompt);
+            suggestedName = suggestedName.trim()
+                    .replaceAll("^\"|\"$", "")
+                    .replaceAll("^'|'$", "")
+                    .split("\\s+")[0];
+
+            if (suggestedName.isEmpty() || !Character.isUpperCase(suggestedName.charAt(0))) {
+                return "Entity";
+            }
+
+            return suggestedName;
+        } catch (Exception e) {
+            System.err.println("Warning: LLM name generation failed: " + e.getMessage());
+            return "Entity";
+        }
     }
 
 };

@@ -20,7 +20,18 @@ public class UMLEnhancer {
         this.pumlBuilder = pumlBuilder;
     }
 
-    // Charge les filtres, fichiers
+    /**
+     * Initialize the UML enhancer with content and threshold.
+     * 
+     * @param pumlContent        The PlantUML diagram content to enhance
+     * @param relevanceThreshold Score threshold for filtering concepts
+     *                           (recommended: 0.3-0.5)
+     *                           - 0.8+: Only high-quality, well-defined concepts
+     *                           - 0.5+: Moderate quality concepts
+     *                           - 0.3+: Include lower quality but potentially
+     *                           useful concepts
+     *                           - 0.1 or lower: Too permissive, may include noise
+     */
     public void init(String pumlContent, float relevanceThreshold) throws Exception {
         // Utilise directement le contenu PUML fourni
         originalUml = pumlContent;
@@ -38,7 +49,14 @@ public class UMLEnhancer {
 
         // Validate token is available
         if (token == null || token.isEmpty()) {
-            throw new Exception("OpenAI API key not found. Please set the OPENAI_API_KEY environment variable or provide a token via setToken().");
+            throw new Exception(
+                    "OpenAI API key not found. Please set the OPENAI_API_KEY environment variable or provide a token via setToken().");
+        }
+
+        // Warn if threshold is too low
+        if (relevanceThreshold < 0.3f) {
+            System.out.println("Warning: Threshold " + relevanceThreshold
+                    + " is very low. Recommended: 0.3-0.5 for best results.");
         }
 
         pumlBuilder.setLlmProvider(new LLMProvider(token, "gpt-4o-mini"));

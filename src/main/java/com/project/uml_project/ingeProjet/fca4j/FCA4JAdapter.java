@@ -150,6 +150,18 @@ public class FCA4JAdapter {
 
         // Pour chaque objet, créer un concept avec ses attributs
         for (String objName : objectNames) {
+            // Filter out relationship concepts (contain "_to_" or "_NULL")
+            if (objName.contains("_to_") || objName.contains("_NULL")) {
+                System.out.println("  - Skipped relationship concept: " + objName);
+                continue;
+            }
+
+            // Filter out UUID-like names
+            if (objName.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) {
+                System.out.println("  - Skipped UUID concept: " + objName);
+                continue;
+            }
+
             Set<String> objAttributes = incidence.get(objName);
 
             // Séparer les attributs des méthodes
@@ -166,6 +178,12 @@ public class FCA4JAdapter {
                 }
             }
 
+            // Skip concepts with no attributes and no methods
+            if (attributes.isEmpty() && methods.isEmpty()) {
+                System.out.println("  - Skipped empty concept: " + objName);
+                continue;
+            }
+
             // Créer un concept pour cet objet
             Concept c = new Concept(objName, null, attributes, methods, "Concept_" + objName);
             result.add(c);
@@ -173,9 +191,9 @@ public class FCA4JAdapter {
 
         System.out.println("FCA4JAdapter generated " + result.size() + " concepts");
         for (Concept c : result) {
-            System.out.println("  - Concept: " + c.getOriginalName() + 
-                             " (attrs: " + c.getAttribute().size() + 
-                             ", methods: " + c.getMethod().size() + ")");
+            System.out.println("  - Concept: " + c.getOriginalName() +
+                    " (attrs: " + c.getAttribute().size() +
+                    ", methods: " + c.getMethod().size() + ")");
         }
 
         return result;
